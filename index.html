@@ -11,6 +11,31 @@
   body { font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif; background: #f5f5f4; min-height: 100vh; }
   .app { max-width: 480px; margin: 0 auto; padding-bottom: 110px; }
 
+  /* ===== SPLASH: il mondo che gira ===== */
+  #splash { position: fixed; inset: 0; z-index: 200; background: #05080F; overflow: hidden;
+    transition: opacity .8s ease; }
+  #splash.via { opacity: 0; pointer-events: none; }
+  #globoSplash { position: absolute; inset: 0; }
+  #splash .velatura { position: absolute; inset: 0; pointer-events: none; z-index: 3;
+    background: radial-gradient(ellipse at 50% 36%, transparent 40%, #05080F 82%); }
+  .splash-testi { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; color: #fff; z-index: 6; padding: 0 24px; }
+  .splash-testi .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .65; }
+  .splash-testi h1 { font-size: 36px; margin-top: 6px; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
+  .splash-testi p { opacity: .8; font-size: 14px; margin-top: 6px; }
+  .btn-inizia { margin-top: 20px; background: #E4572E; color: #fff; border: none; border-radius: 999px;
+    padding: 15px 34px; font-weight: 700; font-size: 16px; box-shadow: 0 8px 26px rgba(228,87,46,.45); }
+  .pin-splash { background: rgba(255,255,255,.93); color: #16264C; border-radius: 999px;
+    padding: 4px 10px; font-size: 11px; font-weight: 700; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,.45); }
+  .orbita { position: absolute; top: 38%; left: 50%; border: 1px dashed rgba(255,255,255,.14);
+    border-radius: 50%; pointer-events: none; z-index: 4; }
+  .orbita .aereo-orb { position: absolute; top: 0; left: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+  .orbita .aereo-orb svg { width: 100%; height: 100%; fill: #fff; transform: rotate(90deg); }
+  @keyframes giraOrario { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+  @keyframes giraAntiorario { from { transform: translate(-50%, -50%) rotate(360deg); } to { transform: translate(-50%, -50%) rotate(0deg); } }
+  @media (prefers-reduced-motion: reduce) { .orbita { animation: none !important; } }
+
   header { background: linear-gradient(135deg, #16264C, #2C3E6B); color: #fff; padding: 26px 20px 18px; border-radius: 0 0 24px 24px; }
   .eyebrow { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: .7; }
   header h1 { font-size: 25px; margin-top: 4px; }
@@ -134,6 +159,24 @@
 </style>
 </head>
 <body>
+
+<!-- ===== SPLASH: il mondo che gira ===== -->
+<div id="splash">
+  <div id="globoSplash"></div>
+  <div class="velatura"></div>
+  <div class="orbita" style="width:330px;height:330px;animation:giraOrario 16s linear infinite;">
+    <div class="aereo-orb"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+  </div>
+  <div class="orbita" style="width:440px;height:440px;animation:giraAntiorario 24s linear infinite;">
+    <div class="aereo-orb" style="width:26px;height:26px;margin:-13px 0 0 -13px;"><svg viewBox="0 0 24 24" style="transform:rotate(-90deg)"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+  </div>
+  <div class="splash-testi">
+    <div class="eyebrow">La tua agenda di viaggio</div>
+    <h1>Il mondo ti aspetta 🌍</h1>
+    <p>Itinerari, budget, mappe, foto e biglietti.<br>Tutto in un posto solo.</p>
+    <button class="btn-inizia" id="btnInizia">Inizia il viaggio →</button>
+  </div>
+</div>
 
 <!-- ===== HOME ===== -->
 <div class="app" id="schermataHome">
@@ -1040,8 +1083,61 @@ $("fab").addEventListener("click", () => corrente ? apriModaleTappa(null) : apri
 document.querySelectorAll(".velo").forEach((v) =>
   v.addEventListener("click", (e) => { if (e.target === v) v.classList.remove("aperto"); }));
 
+// ============ SPLASH: il mondo che gira ============
+let globoSplash = null, spinId = null;
+const MERAVIGLIE = [
+  ["🏛️ Roma", [12.4922, 41.8902]],
+  ["🗼 Parigi", [2.2945, 48.8584]],
+  ["🗽 New York", [-74.0445, 40.6892]],
+  ["⛩️ Tokyo", [139.7967, 35.7148]],
+  ["🏜️ Piramidi di Giza", [31.1342, 29.9792]],
+  ["🛕 Taj Mahal", [78.0421, 27.1751]],
+  ["🏞️ Machu Picchu", [-72.545, -13.1631]],
+  ["🎭 Sydney", [151.2153, -33.8568]],
+  ["🕌 Istanbul", [28.9784, 41.0082]],
+  ["🌴 Rio de Janeiro", [-43.2105, -22.9519]],
+];
+function avviaSplash() {
+  // Senza Mapbox resta comunque il cielo scuro con gli aerei in orbita
+  if (!tokenValido() || !mapboxDisponibile()) return;
+  try {
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    globoSplash = new mapboxgl.Map({
+      container: "globoSplash",
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
+      projection: "globe",
+      center: [12, 22], zoom: 1.45,
+      interactive: false, attributionControl: false,
+    });
+    globoSplash.on("style.load", () => {
+      globoSplash.setFog({ "horizon-blend": .25, color: "#1c3a6e",
+        "high-color": "#0B1730", "space-color": "#05080F", "star-intensity": .5 });
+    });
+    for (const [nome, c] of MERAVIGLIE) {
+      const el = document.createElement("div");
+      el.className = "pin-splash"; el.textContent = nome;
+      new mapboxgl.Marker({ element: el }).setLngLat(c).addTo(globoSplash);
+    }
+    let lng = 12;
+    (function gira() {
+      lng = (lng + 0.05) % 360;
+      globoSplash.setCenter([lng, 22]);
+      spinId = requestAnimationFrame(gira);
+    })();
+  } catch {}
+}
+function chiudiSplash() {
+  $("splash").classList.add("via");
+  if (spinId) cancelAnimationFrame(spinId);
+  setTimeout(() => {
+    if (globoSplash) { globoSplash.remove(); globoSplash = null; }
+    $("splash").remove();
+  }, 850);
+}
+$("btnInizia").addEventListener("click", chiudiSplash);
+
 // ============ AVVIO ============
-apriDB().then(renderHome);
+apriDB().then(() => { renderHome(); avviaSplash(); });
 </script>
 </body>
 </html>
