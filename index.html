@@ -21,8 +21,8 @@
   .countdown.corso { background: #2A9D8F; }
   .countdown.fine { background: rgba(255,255,255,.2); }
 
-  .tabs { display: flex; gap: 6px; padding: 14px 16px 0; }
-  .tab { flex: 1; padding: 9px; border-radius: 999px; border: 1px solid #e7e5e4; background: #fff; color: #57534e; font-size: 14px; font-weight: 600; }
+  .tabs { display: flex; gap: 6px; padding: 14px 16px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { flex: 0 0 auto; padding: 9px 14px; border-radius: 999px; border: 1px solid #e7e5e4; background: #fff; color: #57534e; font-size: 14px; font-weight: 600; }
   .tab.attiva { background: #1c1917; color: #fff; border-color: #1c1917; }
 
   main { padding: 18px 16px; }
@@ -73,7 +73,11 @@
     background: #E4572E; color: #fff; border: none; border-radius: 999px; padding: 12px 22px;
     font-size: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
   .btn-viaggio:disabled { background: #4A5878; }
-  .veicolo-mappa { font-size: 30px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+  /* Cursore veicolo stile Google Maps */
+  .veicolo-google { width: 42px; height: 42px; border-radius: 50%; background: #fff;
+    border: 3px solid #1c1917; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 12px rgba(0,0,0,.35); }
+  .veicolo-google svg { width: 23px; height: 23px; transition: transform .15s linear; }
 
   .velo { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
   .velo.aperto { display: flex; }
@@ -93,7 +97,7 @@
   .azioni .pericolo { color: #C9514C; border-color: #f0d4d2; }
   .nascosto { display: none !important; }
 
-  /* Suggerimenti di ricerca luogo */
+  /* Suggerimenti luogo */
   .campo-luogo { position: relative; }
   .lista-sugg { position: absolute; top: 100%; left: 0; right: 0; margin-top: -8px; z-index: 10;
     background: #fff; border: 1px solid #d6d3d1; border-radius: 12px; overflow: hidden;
@@ -103,6 +107,30 @@
   .lista-sugg button small { display: block; color: #a8a29e; font-size: 12px; margin-top: 1px; }
   .lista-sugg button:last-child { border-bottom: none; }
   .luogo-ok { font-size: 12px; color: #2A9D8F; font-weight: 600; margin: -6px 2px 10px; }
+
+  /* Foto */
+  .barra-azioni { display: flex; gap: 8px; margin-bottom: 16px; }
+  .barra-azioni button { flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #e7e5e4; background: #fff; font-size: 14px; font-weight: 600; color: #1c1917; }
+  .barra-azioni .primario { background: #1c1917; color: #fff; border-color: #1c1917; }
+  .gruppo-foto h2 { font-size: 15px; color: #1c1917; margin: 14px 2px 8px; }
+  .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .griglia img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; }
+
+  /* Biglietti */
+  .biglietto { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e7e5e4; border-radius: 14px; padding: 13px; margin-bottom: 8px; }
+  .biglietto .ico { font-size: 24px; }
+  .biglietto .info { flex: 1; }
+  .biglietto .info b { display: block; color: #1c1917; font-size: 15px; }
+  .biglietto .info span { font-size: 12px; color: #a8a29e; }
+  .biglietto button { background: none; border: none; font-size: 17px; padding: 6px; color: #78716c; }
+
+  /* Visore foto / album */
+  .visore { position: fixed; inset: 0; background: rgba(0,0,0,.94); z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .visore img { max-width: 96vw; max-height: 72vh; border-radius: 10px; object-fit: contain; }
+  .visore .dida { color: #fff; font-size: 15px; font-weight: 600; }
+  .visore .visore-azioni { display: flex; gap: 10px; }
+  .visore .visore-azioni button { background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -132,22 +160,33 @@
     <button class="tab attiva" data-vista="itinerario">🗓️ Itinerario</button>
     <button class="tab" data-vista="budget">💰 Budget</button>
     <button class="tab" data-vista="mappa">🗺️ Mappa</button>
+    <button class="tab" data-vista="foto">📷 Foto</button>
+    <button class="tab" data-vista="biglietti">🎫 Biglietti</button>
   </div>
   <main id="vistaItinerario"></main>
   <main id="vistaBudget" class="nascosto"></main>
   <main id="vistaMappa" class="nascosto">
     <div class="mappa-avviso nascosto" id="mappaAvviso">
-      🗺️ <b>Per attivare la mappa serve il token Mapbox.</b><br><br>
-      1. Crea un account gratuito su <b>mapbox.com</b><br>
-      2. Copia il <b>Default public token</b> (inizia con <code>pk.</code>)<br>
-      3. Nel codice di questa pagina, in alto nello script, incollalo al posto di <code>INCOLLA_QUI_IL_TUO_TOKEN</code>
+      🗺️ <b>Per attivare la mappa serve il token Mapbox</b> (vedi le istruzioni nello script).
     </div>
     <div class="mappa-avviso nascosto" id="mappaOffline">
-      🗺️ <b>La mappa non può caricarsi in questa anteprima</b> perché le risorse esterne di Mapbox sono bloccate qui in chat.<br><br>
-      Sul tuo sito pubblicato (github.io) funzionerà normalmente.
+      🗺️ <b>La mappa non può caricarsi in questa anteprima</b> perché le risorse esterne di Mapbox sono bloccate qui in chat. Sul tuo sito pubblicato funzionerà normalmente.
     </div>
     <div id="contenitoreMappa"></div>
     <button class="btn-viaggio nascosto" id="btnViaggio">▶ Riproduci viaggio</button>
+  </main>
+  <main id="vistaFoto" class="nascosto">
+    <div class="barra-azioni">
+      <button class="primario" id="btnAggiungiFoto">📷 Aggiungi foto</button>
+      <button id="btnAlbum">🎞️ Album del viaggio</button>
+    </div>
+    <div id="grigliaFoto"></div>
+  </main>
+  <main id="vistaBiglietti" class="nascosto">
+    <div class="barra-azioni">
+      <button class="primario" id="btnAggiungiBiglietto">🎫 Aggiungi biglietto</button>
+    </div>
+    <div id="listaBiglietti"></div>
   </main>
 </div>
 
@@ -180,22 +219,102 @@
     <label>Giorno</label>
     <select id="tGiorno"></select>
     <label>Titolo</label>
-    <input id="tTitolo" placeholder="Es. Cena da Luigi" />
-    <div class="riga-doppia">
-      <div><label>Ora</label><input id="tOra" type="time" /></div>
-      <div><label>Costo €</label><input id="tCosto" type="number" inputmode="decimal" placeholder="0" /></div>
+    <input id="tTitolo" placeholder="Es. Cena da Luigi / Volo ANA NH204" />
+
+    <!-- Campi per attività normali -->
+    <div id="bloccoNormale">
+      <label>Ora</label>
+      <input id="tOra" type="time" />
+      <label>Luogo — scrivi e scegli dai suggerimenti</label>
+      <div class="campo-luogo">
+        <input id="tLuogo" placeholder="Es. Torre Eiffel, Parigi" autocomplete="off" />
+        <div class="lista-sugg nascosto" id="tSuggerimenti"></div>
+      </div>
+      <div class="luogo-ok nascosto" id="tLuogoOk">✓ Posizione trovata sulla mappa</div>
     </div>
-    <label>Luogo — scrivi e scegli dai suggerimenti</label>
-    <div class="campo-luogo">
-      <input id="tLuogo" placeholder="Es. Torre Eiffel, Parigi" autocomplete="off" />
-      <div class="lista-sugg nascosto" id="tSuggerimenti"></div>
+
+    <!-- Campi per trasporti (volo/treno): DA → A con orari -->
+    <div id="bloccoTrasporto" class="nascosto">
+      <label>Da (partenza)</label>
+      <div class="campo-luogo">
+        <input id="tDa" placeholder="Es. Aeroporto di Fiumicino, Roma" autocomplete="off" />
+        <div class="lista-sugg nascosto" id="tDaSugg"></div>
+      </div>
+      <div class="luogo-ok nascosto" id="tDaOk">✓ Partenza trovata sulla mappa</div>
+      <label>A (arrivo)</label>
+      <div class="campo-luogo">
+        <input id="tA" placeholder="Es. Aeroporto Haneda, Tokyo" autocomplete="off" />
+        <div class="lista-sugg nascosto" id="tASugg"></div>
+      </div>
+      <div class="luogo-ok nascosto" id="tAOk">✓ Arrivo trovato sulla mappa</div>
+      <div class="riga-doppia">
+        <div><label>Orario partenza</label><input id="tOraDa" type="time" /></div>
+        <div><label>Orario arrivo</label><input id="tOraA" type="time" /></div>
+      </div>
     </div>
-    <div class="luogo-ok nascosto" id="tLuogoOk">✓ Posizione trovata sulla mappa</div>
+
+    <label>Costo €</label>
+    <input id="tCosto" type="number" inputmode="decimal" placeholder="0" />
     <div class="azioni">
       <button class="pericolo nascosto" id="tElimina">Elimina</button>
       <button id="tAnnulla">Annulla</button>
       <button class="salva" id="tSalva" disabled>Salva</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== MODALE FOTO ===== -->
+<div class="velo" id="veloFoto">
+  <div class="modale">
+    <h3>Aggiungi foto</h3>
+    <label>Località (per raggruppare le foto)</label>
+    <input id="fLocalita" list="elencoLocalita" placeholder="Es. Tokyo" />
+    <datalist id="elencoLocalita"></datalist>
+    <div class="azioni">
+      <button id="fAnnulla">Annulla</button>
+      <button class="salva" id="fScegli">Scegli foto 📁</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileFoto" accept="image/*" multiple class="nascosto" />
+
+<!-- ===== MODALE BIGLIETTO ===== -->
+<div class="velo" id="veloBiglietto">
+  <div class="modale">
+    <h3>Aggiungi biglietto</h3>
+    <label>Nome</label>
+    <input id="bNome" placeholder="Es. Volo Roma → Tokyo, andata" />
+    <label>Tipo</label>
+    <select id="bTipo">
+      <option value="volo">✈️ Volo</option>
+      <option value="treno">🚄 Treno</option>
+      <option value="hotel">🛏️ Hotel/B&B</option>
+      <option value="attivita">🎟️ Attività</option>
+      <option value="altro">📎 Altro</option>
+    </select>
+    <div class="azioni">
+      <button id="bAnnulla">Annulla</button>
+      <button class="salva" id="bScegli">Scegli file 📁</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileBiglietto" accept="image/*,.pdf" class="nascosto" />
+
+<!-- ===== VISORE FOTO / ALBUM ===== -->
+<div class="visore nascosto" id="visore">
+  <img id="visoreImg" alt="" />
+  <div class="dida" id="visoreDida"></div>
+  <div class="visore-azioni">
+    <button id="visoreElimina">🗑️ Elimina</button>
+    <button id="visoreChiudi">✕ Chiudi</button>
+  </div>
+</div>
+<div class="visore nascosto" id="album">
+  <img id="albumImg" alt="" />
+  <div class="dida" id="albumDida"></div>
+  <div class="visore-azioni">
+    <button id="albumAvanti">Avanti ▸</button>
+    <button id="albumChiudi">✕ Chiudi</button>
   </div>
 </div>
 
@@ -212,16 +331,75 @@ const TIPI = {
   attivita:   { label: "Attività",   icona: "🎟️", colore: "#E9A03B" },
   ristorante: { label: "Ristorante", icona: "🍝", colore: "#C9514C" },
 };
+const ICONE_SVG = {
+  volo: '<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',
+  treno: '<path d="M12 2C8 2 4 2.5 4 6v9.5A3.5 3.5 0 0 0 7.5 19L6 20.5v.5h2.2l2-2h3.6l2 2H18v-.5L16.5 19a3.5 3.5 0 0 0 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 16.5A1.5 1.5 0 1 1 9 15a1.5 1.5 0 0 1-1.5 1.5zM11 9.5H6V6h5v3.5zm2 0V6h5v3.5h-5zm3.5 7A1.5 1.5 0 1 1 18 15a1.5 1.5 0 0 1-1.5 1.5z"/>',
+  auto: '<path d="M18.9 6c-.2-.6-.8-1-1.4-1h-11c-.7 0-1.2.4-1.4 1L3 12v8c0 .6.4 1 1 1h1c.6 0 1-.4 1-1v-1h12v1c0 .6.4 1 1 1h1c.6 0 1-.4 1-1v-8l-2.1-6zM6.5 16A1.5 1.5 0 1 1 8 14.5 1.5 1.5 0 0 1 6.5 16zm11 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>',
+};
 const CHIAVE = "agenda-viaggi-v2";
 const $ = (id) => document.getElementById(id);
 const eur = (n) => n === 0 ? "Gratis" : "€ " + n.toLocaleString("it-IT");
+const isTrasporto = (tipo) => tipo === "volo" || tipo === "treno";
 
 let viaggi = [];
 try { viaggi = JSON.parse(localStorage.getItem(CHIAVE)) || []; } catch { viaggi = []; }
 let corrente = null, tappaInModifica = null, viaggioInModifica = false;
 let mappa = null, marcatori = [], mappaPronta = false, animazioneInCorso = false;
-let coordScelta = null; // coordinate scelte dai suggerimenti nel form tappa
+let coordScelta = null, coordDaScelta = null, coordAScelta = null;
 const salva = () => { try { localStorage.setItem(CHIAVE, JSON.stringify(viaggi)); } catch {} };
+
+// ============ DATABASE LOCALE (IndexedDB) per foto e biglietti ============
+let db = null;
+function apriDB() {
+  return new Promise((res) => {
+    const r = indexedDB.open("agenda-viaggi-db", 1);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains("foto")) d.createObjectStore("foto", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("biglietti")) d.createObjectStore("biglietti", { keyPath: "id" });
+    };
+    r.onsuccess = () => { db = r.result; res(); };
+    r.onerror = () => res();
+  });
+}
+function dbPut(store, val) {
+  return new Promise((res) => {
+    if (!db) return res();
+    const tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).put(val);
+    tx.oncomplete = () => res(); tx.onerror = () => res();
+  });
+}
+function dbTutti(store) {
+  return new Promise((res) => {
+    if (!db) return res([]);
+    const rq = db.transaction(store).objectStore(store).getAll();
+    rq.onsuccess = () => res(rq.result || []); rq.onerror = () => res([]);
+  });
+}
+function dbElimina(store, id) {
+  return new Promise((res) => {
+    if (!db) return res();
+    const tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).delete(id);
+    tx.oncomplete = () => res(); tx.onerror = () => res();
+  });
+}
+// Comprime una foto (max 1280px) per non riempire la memoria
+function comprimi(file) {
+  return new Promise((res) => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1280, s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = img.width * s; c.height = img.height * s;
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob((b) => res(b || file), "image/jpeg", .82);
+    };
+    img.onerror = () => res(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 // ============ DATE E FASCE ORARIE ============
 const oggiISO = () => new Date().toISOString().slice(0, 10);
@@ -258,6 +436,8 @@ function fasciaDi(t) {
   if (h < 18) return 1;
   return 2;
 }
+const ordina = (tappe) => [...tappe].sort((a, b) =>
+  (a.ora === "—" ? "99" : a.ora) > (b.ora === "—" ? "99" : b.ora) ? 1 : -1);
 
 // ============ HOME ============
 function renderHome() {
@@ -281,9 +461,14 @@ function renderHome() {
       </div>
       <button class="x">✕</button>`;
     card.querySelector(".info").addEventListener("click", () => apriViaggio(v.id));
-    card.querySelector(".x").addEventListener("click", () => {
-      if (!confirm('Eliminare il viaggio "' + v.nome + '"? I dati andranno persi.')) return;
-      viaggi = viaggi.filter((x) => x.id !== v.id); salva(); renderHome();
+    card.querySelector(".x").addEventListener("click", async () => {
+      if (!confirm('Eliminare il viaggio "' + v.nome + '"? Verranno eliminati anche foto e biglietti.')) return;
+      viaggi = viaggi.filter((x) => x.id !== v.id); salva();
+      for (const st of ["foto", "biglietti"]) {
+        const tutti = await dbTutti(st);
+        for (const r of tutti) if (r.viaggioId === v.id) await dbElimina(st, r.id);
+      }
+      renderHome();
     });
     m.appendChild(card);
   }
@@ -304,7 +489,7 @@ function renderViaggio() {
   const s = statoViaggio(corrente);
   $("countdown").textContent = s.testo;
   $("countdown").className = "countdown " + s.classe;
-  renderItinerario(); renderBudget(); renderMappa();
+  renderItinerario(); renderBudget(); renderMappa(); renderFoto(); renderBiglietti();
 }
 function renderItinerario() {
   const m = $("vistaItinerario"); m.innerHTML =
@@ -322,9 +507,8 @@ function renderItinerario() {
       const d = document.createElement("div"); d.className = "vuoto";
       d.textContent = "Nessuna tappa"; sez.appendChild(d);
     }
-    const ordinate = [...g.tappe].sort((a, b) => (a.ora === "—" ? "99" : a.ora) > (b.ora === "—" ? "99" : b.ora) ? 1 : -1);
     let fasciaCorrente = -1;
-    for (const t of ordinate) {
+    for (const t of ordina(g.tappe)) {
       const f = fasciaDi(t);
       if (f !== fasciaCorrente) {
         fasciaCorrente = f;
@@ -332,11 +516,12 @@ function renderItinerario() {
         et.textContent = FASCE[f]; sez.appendChild(et);
       }
       const tp = TIPI[t.tipo];
+      const orario = isTrasporto(t.tipo) && t.oraArrivo ? `${t.ora} → ${t.oraArrivo}` : t.ora;
       const div = document.createElement("div"); div.className = "tappa";
       div.innerHTML = `
         <div class="barra" style="background:${tp.colore}"></div>
         <div class="corpo">
-          <div class="meta">${tp.icona} ${tp.label} · ${t.ora}</div>
+          <div class="meta">${tp.icona} ${tp.label} · ${orario}</div>
           <div class="titolo">${t.titolo}</div>
           <div class="luogo">${t.luogo ? "📍 " + t.luogo : ""}</div>
         </div>
@@ -373,16 +558,17 @@ function renderBudget() {
 const tokenValido = () => MAPBOX_TOKEN.startsWith("pk.");
 const mapboxDisponibile = () => typeof mapboxgl !== "undefined";
 
-// Tutte le tappe con coordinate, in ordine cronologico (giorno + ora)
-function tappePerRotta() {
+// Sequenza cronologica di punti: i trasporti contribuiscono con partenza e arrivo
+function nodiRotta() {
   const out = [];
-  for (const g of corrente.giorni) {
-    const ordinate = [...g.tappe].sort((a, b) => (a.ora === "—" ? "99" : a.ora) > (b.ora === "—" ? "99" : b.ora) ? 1 : -1);
-    for (const t of ordinate) if (t.coord) out.push({ t, g });
+  for (const g of corrente.giorni) for (const t of ordina(g.tappe)) {
+    if (isTrasporto(t.tipo)) {
+      if (t.coordDa) out.push({ coord: t.coordDa, mezzo: null });
+      if (t.coordA) out.push({ coord: t.coordA, mezzo: t.tipo });
+    } else if (t.coord) out.push({ coord: t.coord, mezzo: null });
   }
   return out;
 }
-// Punto lungo un arco curvo tra a e b (effetto rotta aerea)
 function puntoArco(a, b, t) {
   const dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + dist * 0.18];
@@ -394,14 +580,13 @@ function lineaArco(a, b) {
   for (let i = 0; i <= 50; i++) pts.push(puntoArco(a, b, i / 50));
   return pts;
 }
-// Disegna/aggiorna le rotte tratteggiate tra tappe consecutive
 function aggiornaRotte() {
   if (!mappa || !mappaPronta || !corrente) return;
-  const lista = tappePerRotta();
+  const nodi = nodiRotta();
   const linee = [];
-  for (let i = 0; i < lista.length - 1; i++) {
+  for (let i = 0; i < nodi.length - 1; i++) {
     linee.push({ type: "Feature", properties: {}, geometry: { type: "LineString",
-      coordinates: lineaArco(lista[i].t.coord, lista[i + 1].t.coord) } });
+      coordinates: lineaArco(nodi[i].coord, nodi[i + 1].coord) } });
   }
   const dati = { type: "FeatureCollection", features: linee };
   if (mappa.getSource("rotte")) mappa.getSource("rotte").setData(dati);
@@ -410,7 +595,7 @@ function aggiornaRotte() {
     mappa.addLayer({ id: "rotte", type: "line", source: "rotte",
       paint: { "line-color": "#E4572E", "line-width": 2.5, "line-dasharray": [2, 2.5], "line-opacity": .85 } });
   }
-  $("btnViaggio").classList.toggle("nascosto", lista.length < 2);
+  $("btnViaggio").classList.toggle("nascosto", nodi.length < 2);
 }
 function renderMappa() {
   $("mappaAvviso").classList.toggle("nascosto", tokenValido());
@@ -429,13 +614,19 @@ function renderMappa() {
   }
   marcatori.forEach((m) => m.remove()); marcatori = [];
   const punti = [];
+  const aggiungi = (coord, colore, html) => {
+    const m = new mapboxgl.Marker({ color: colore })
+      .setLngLat(coord).setPopup(new mapboxgl.Popup({ offset: 22 }).setHTML(html)).addTo(mappa);
+    marcatori.push(m); punti.push(coord);
+  };
   for (const g of corrente.giorni) for (const t of g.tappe) {
-    if (!t.coord) continue;
-    const popup = new mapboxgl.Popup({ offset: 22 })
-      .setHTML(`<b>${TIPI[t.tipo].icona} ${t.titolo}</b><br>${g.titolo} · ${t.ora}<br>📍 ${t.luogo}`);
-    const m = new mapboxgl.Marker({ color: TIPI[t.tipo].colore })
-      .setLngLat(t.coord).setPopup(popup).addTo(mappa);
-    marcatori.push(m); punti.push(t.coord);
+    const tp = TIPI[t.tipo];
+    if (isTrasporto(t.tipo)) {
+      if (t.coordDa) aggiungi(t.coordDa, tp.colore, `<b>${tp.icona} ${t.titolo}</b><br>Partenza ${t.ora}<br>📍 ${t.luogoDa || ""}`);
+      if (t.coordA) aggiungi(t.coordA, tp.colore, `<b>${tp.icona} ${t.titolo}</b><br>Arrivo ${t.oraArrivo || ""}<br>📍 ${t.luogoA || ""}`);
+    } else if (t.coord) {
+      aggiungi(t.coord, tp.colore, `<b>${tp.icona} ${t.titolo}</b><br>${g.titolo} · ${t.ora}<br>📍 ${t.luogo}`);
+    }
   }
   if (punti.length && !animazioneInCorso) {
     const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
@@ -444,19 +635,33 @@ function renderMappa() {
   aggiornaRotte();
 }
 
-// ===== Timeline animata: il mezzo percorre le rotte tappa per tappa =====
+// ===== Cursore veicolo stile Google Maps =====
+function creaVeicolo(tipo) {
+  const colore = TIPI[tipo] ? TIPI[tipo].colore : "#57534e";
+  const el = document.createElement("div");
+  el.className = "veicolo-google";
+  el.style.borderColor = colore;
+  el.innerHTML = `<svg viewBox="0 0 24 24" fill="${colore}">${ICONE_SVG[tipo] || ICONE_SVG.auto}</svg>`;
+  return el;
+}
 const easeInOut = (t) => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-const mezzoPer = (tipo) => tipo === "volo" ? "✈️" : tipo === "treno" ? "🚄" : "🚗";
 const attesa = (ms) => new Promise((r) => setTimeout(r, ms));
-function animaSegmento(a, b, emoji, durata) {
+function animaSegmento(a, b, tipo, durata) {
   return new Promise((fine) => {
-    const el = document.createElement("div");
-    el.className = "veicolo-mappa"; el.textContent = emoji;
+    const el = creaVeicolo(tipo);
+    const svg = el.querySelector("svg");
     const veicolo = new mapboxgl.Marker({ element: el }).setLngLat(a).addTo(mappa);
     const t0 = performance.now();
+    let prec = a;
     (function passo(ora) {
       const t = Math.min((ora - t0) / durata, 1);
-      veicolo.setLngLat(puntoArco(a, b, easeInOut(t)));
+      const p = puntoArco(a, b, easeInOut(t));
+      veicolo.setLngLat(p);
+      if (tipo === "volo") { // l'aereo punta nella direzione di marcia
+        const ang = Math.atan2(p[0] - prec[0], p[1] - prec[1]) * 180 / Math.PI;
+        if (p[0] !== prec[0] || p[1] !== prec[1]) svg.style.transform = `rotate(${ang}deg)`;
+      }
+      prec = p;
       if (t < 1) requestAnimationFrame(passo);
       else { veicolo.remove(); fine(); }
     })(performance.now());
@@ -464,23 +669,20 @@ function animaSegmento(a, b, emoji, durata) {
 }
 $("btnViaggio").addEventListener("click", async () => {
   if (animazioneInCorso) return;
-  const lista = tappePerRotta();
-  if (lista.length < 2) return;
+  const nodi = nodiRotta();
+  if (nodi.length < 2) return;
   animazioneInCorso = true;
   const btn = $("btnViaggio");
   btn.disabled = true; btn.textContent = "In viaggio…";
-  for (let i = 0; i < lista.length - 1; i++) {
-    const a = lista[i].t.coord, b = lista[i + 1].t.coord;
-    // La camera inquadra il segmento
+  for (let i = 0; i < nodi.length - 1; i++) {
+    const a = nodi[i].coord, b = nodi[i + 1].coord;
     mappa.fitBounds(new mapboxgl.LngLatBounds(a, a).extend(b), { padding: 90, maxZoom: 12, duration: 1100 });
     await attesa(1200);
-    // Il mezzo dipende dal tipo della tappa di arrivo: volo ✈️, treno 🚄, altro 🚗
     const dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    await animaSegmento(a, b, mezzoPer(lista[i + 1].t.tipo), Math.min(2200 + dist * 60, 5500));
+    await animaSegmento(a, b, nodi[i + 1].mezzo || "auto", Math.min(2200 + dist * 60, 5500));
     await attesa(350);
   }
-  // Vista finale su tutto il viaggio
-  const punti = lista.map((x) => x.t.coord);
+  const punti = nodi.map((x) => x.coord);
   const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
   mappa.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 1400 });
   btn.disabled = false; btn.textContent = "↺ Rivedi viaggio";
@@ -491,14 +693,46 @@ $("btnViaggio").addEventListener("click", async () => {
 async function cercaLuoghi(testo, limite) {
   if (!tokenValido() || !testo) return [];
   try {
-    // Se il viaggio ha già una tappa con coordinate, do priorità ai luoghi vicini
-    const prossimita = corrente && tappePerRotta().length
-      ? "&proximity=" + tappePerRotta()[0].t.coord.join(",") : "";
+    const nodi = corrente ? nodiRotta() : [];
+    const prossimita = nodi.length ? "&proximity=" + nodi[0].coord.join(",") : "";
     const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(testo)}.json?access_token=${MAPBOX_TOKEN}&limit=${limite || 5}&language=it${prossimita}`);
     const j = await r.json();
     return j.features || [];
   } catch { return []; }
 }
+// Attiva i suggerimenti su un campo luogo
+function attivaSuggerimenti(inputId, boxId, okId, assegna) {
+  let timer = null;
+  $(inputId).addEventListener("input", () => {
+    assegna(null);
+    $(okId).classList.add("nascosto");
+    clearTimeout(timer);
+    const testo = $(inputId).value.trim();
+    if (testo.length < 3) { $(boxId).classList.add("nascosto"); return; }
+    timer = setTimeout(async () => {
+      const risultati = await cercaLuoghi(testo, 5);
+      const box = $(boxId); box.innerHTML = "";
+      if (!risultati.length) { box.classList.add("nascosto"); return; }
+      for (const f of risultati) {
+        const b = document.createElement("button");
+        const nome = f.text || f.place_name;
+        const resto = f.place_name && f.place_name !== nome ? f.place_name.replace(nome + ", ", "") : "";
+        b.innerHTML = `📍 ${nome}${resto ? `<small>${resto}</small>` : ""}`;
+        b.addEventListener("click", () => {
+          $(inputId).value = f.place_name;
+          assegna(f.center);
+          box.classList.add("nascosto");
+          $(okId).classList.remove("nascosto");
+        });
+        box.appendChild(b);
+      }
+      box.classList.remove("nascosto");
+    }, 350);
+  });
+}
+attivaSuggerimenti("tLuogo", "tSuggerimenti", "tLuogoOk", (c) => coordScelta = c);
+attivaSuggerimenti("tDa", "tDaSugg", "tDaOk", (c) => coordDaScelta = c);
+attivaSuggerimenti("tA", "tASugg", "tAOk", (c) => coordAScelta = c);
 
 // ============ MODALE VIAGGIO ============
 function apriModaleViaggio(modifica) {
@@ -541,6 +775,10 @@ $("vSalva").addEventListener("click", () => {
 
 // ============ MODALE TAPPA ============
 let tipoScelto = "attivita";
+function aggiornaBlocchi() {
+  $("bloccoTrasporto").classList.toggle("nascosto", !isTrasporto(tipoScelto));
+  $("bloccoNormale").classList.toggle("nascosto", isTrasporto(tipoScelto));
+}
 function renderChips() {
   $("sceltaTipo").innerHTML = "";
   for (const [k, t] of Object.entries(TIPI)) {
@@ -548,7 +786,7 @@ function renderChips() {
     c.className = "chip" + (k === tipoScelto ? " scelto" : "");
     if (k === tipoScelto) { c.style.background = t.colore; c.style.borderColor = t.colore; }
     c.textContent = t.icona + " " + t.label;
-    c.addEventListener("click", () => { tipoScelto = k; renderChips(); });
+    c.addEventListener("click", () => { tipoScelto = k; renderChips(); aggiornaBlocchi(); });
     $("sceltaTipo").appendChild(c);
   }
 }
@@ -557,52 +795,32 @@ function apriModaleTappa(modifica) {
   const t = modifica ? modifica.tappa : null;
   $("titoloModaleTappa").textContent = t ? "Modifica tappa" : "Aggiungi tappa";
   tipoScelto = t ? t.tipo : "attivita";
-  renderChips();
+  renderChips(); aggiornaBlocchi();
   $("tGiorno").innerHTML = corrente.giorni
     .map((g) => `<option value="${g.id}">${g.titolo} · ${fmtData(g.data)}</option>`).join("");
   $("tGiorno").value = modifica ? modifica.giorno.id : corrente.giorni[0].id;
   $("tTitolo").value = t ? t.titolo : "";
-  $("tOra").value = t && t.ora !== "—" ? t.ora : "";
   $("tCosto").value = t && t.costo ? t.costo : "";
-  $("tLuogo").value = t ? t.luogo : "";
-  coordScelta = t ? t.coord : null;
+  // Campi normali
+  $("tOra").value = t && !isTrasporto(t.tipo) && t.ora !== "—" ? t.ora : "";
+  $("tLuogo").value = t && !isTrasporto(t.tipo) ? (t.luogo || "") : "";
+  coordScelta = t && !isTrasporto(t.tipo) ? t.coord : null;
   $("tLuogoOk").classList.toggle("nascosto", !coordScelta);
-  $("tSuggerimenti").classList.add("nascosto");
+  // Campi trasporto
+  $("tDa").value = t && isTrasporto(t.tipo) ? (t.luogoDa || "") : "";
+  $("tA").value = t && isTrasporto(t.tipo) ? (t.luogoA || "") : "";
+  $("tOraDa").value = t && isTrasporto(t.tipo) && t.ora !== "—" ? t.ora : "";
+  $("tOraA").value = t && isTrasporto(t.tipo) ? (t.oraArrivo || "") : "";
+  coordDaScelta = t && isTrasporto(t.tipo) ? t.coordDa : null;
+  coordAScelta = t && isTrasporto(t.tipo) ? t.coordA : null;
+  $("tDaOk").classList.toggle("nascosto", !coordDaScelta);
+  $("tAOk").classList.toggle("nascosto", !coordAScelta);
+  document.querySelectorAll(".lista-sugg").forEach((x) => x.classList.add("nascosto"));
   $("tSalva").disabled = !t;
   $("tElimina").classList.toggle("nascosto", !t);
   $("veloTappa").classList.add("aperto");
 }
 $("tTitolo").addEventListener("input", () => { $("tSalva").disabled = $("tTitolo").value.trim() === ""; });
-
-// Suggerimenti mentre si digita il luogo
-let timerSugg = null;
-$("tLuogo").addEventListener("input", () => {
-  coordScelta = null;                                  // testo cambiato: la posizione va riscelta
-  $("tLuogoOk").classList.add("nascosto");
-  clearTimeout(timerSugg);
-  const testo = $("tLuogo").value.trim();
-  if (testo.length < 3) { $("tSuggerimenti").classList.add("nascosto"); return; }
-  timerSugg = setTimeout(async () => {
-    const risultati = await cercaLuoghi(testo, 5);
-    const box = $("tSuggerimenti"); box.innerHTML = "";
-    if (!risultati.length) { box.classList.add("nascosto"); return; }
-    for (const f of risultati) {
-      const b = document.createElement("button");
-      const nome = f.text || f.place_name;
-      const resto = f.place_name && f.place_name !== nome ? f.place_name.replace(nome + ", ", "") : "";
-      b.innerHTML = `📍 ${nome}${resto ? `<small>${resto}</small>` : ""}`;
-      b.addEventListener("click", () => {
-        $("tLuogo").value = f.place_name;
-        coordScelta = f.center;
-        box.classList.add("nascosto");
-        $("tLuogoOk").classList.remove("nascosto");
-      });
-      box.appendChild(b);
-    }
-    box.classList.remove("nascosto");
-  }, 350);
-});
-
 $("tAnnulla").addEventListener("click", () => $("veloTappa").classList.remove("aperto"));
 $("tElimina").addEventListener("click", () => {
   if (!tappaInModifica) return;
@@ -612,43 +830,206 @@ $("tElimina").addEventListener("click", () => {
   salva(); $("veloTappa").classList.remove("aperto"); renderViaggio();
 });
 $("tSalva").addEventListener("click", async () => {
-  const luogoNuovo = $("tLuogo").value.trim();
-  const dati = {
-    tipo: tipoScelto,
-    ora: $("tOra").value || "—",
-    titolo: $("tTitolo").value.trim(),
-    luogo: luogoNuovo,
-    costo: Number($("tCosto").value) || 0,
-  };
+  const trasporto = isTrasporto(tipoScelto);
+  const dati = trasporto
+    ? {
+        tipo: tipoScelto,
+        ora: $("tOraDa").value || "—",
+        oraArrivo: $("tOraA").value || "",
+        luogoDa: $("tDa").value.trim(),
+        luogoA: $("tA").value.trim(),
+        coordDa: coordDaScelta,
+        coordA: coordAScelta,
+        luogo: [$("tDa").value.trim() || "?", $("tA").value.trim() || "?"].join(" → "),
+        coord: null,
+        titolo: $("tTitolo").value.trim(),
+        costo: Number($("tCosto").value) || 0,
+      }
+    : {
+        tipo: tipoScelto,
+        ora: $("tOra").value || "—",
+        oraArrivo: "",
+        luogo: $("tLuogo").value.trim(),
+        coord: $("tLuogo").value.trim() ? coordScelta : null,
+        luogoDa: "", luogoA: "", coordDa: null, coordA: null,
+        titolo: $("tTitolo").value.trim(),
+        costo: Number($("tCosto").value) || 0,
+      };
   const giornoDest = corrente.giorni.find((g) => String(g.id) === $("tGiorno").value);
   let tappa;
   if (tappaInModifica) {
     tappa = tappaInModifica.tappa;
     Object.assign(tappa, dati);
-    tappa.coord = luogoNuovo ? coordScelta : null;
     if (giornoDest.id !== tappaInModifica.giorno.id) {
       tappaInModifica.giorno.tappe = tappaInModifica.giorno.tappe.filter((x) => x.id !== tappa.id);
       giornoDest.tappe.push(tappa);
     }
   } else {
-    tappa = { id: Date.now(), ...dati, coord: luogoNuovo ? coordScelta : null };
+    tappa = { id: Date.now(), ...dati };
     giornoDest.tappe.push(tappa);
   }
   salva(); $("veloTappa").classList.remove("aperto"); renderViaggio();
-  // Se non è stato scelto un suggerimento, cerco comunque il luogo in background
-  if (luogoNuovo && !tappa.coord) {
-    const r = await cercaLuoghi(luogoNuovo, 1);
-    if (r[0]) { tappa.coord = r[0].center; salva(); renderMappa(); }
+  // Geocoding in background per i campi senza suggerimento scelto
+  let cambiato = false;
+  if (trasporto) {
+    if (tappa.luogoDa && !tappa.coordDa) { const r = await cercaLuoghi(tappa.luogoDa, 1); if (r[0]) { tappa.coordDa = r[0].center; cambiato = true; } }
+    if (tappa.luogoA && !tappa.coordA) { const r = await cercaLuoghi(tappa.luogoA, 1); if (r[0]) { tappa.coordA = r[0].center; cambiato = true; } }
+  } else if (tappa.luogo && !tappa.coord) {
+    const r = await cercaLuoghi(tappa.luogo, 1); if (r[0]) { tappa.coord = r[0].center; cambiato = true; }
   }
+  if (cambiato) { salva(); renderMappa(); }
 });
+
+// ============ FOTO ============
+function localitaSuggerite() {
+  const set = new Set();
+  for (const g of corrente.giorni) for (const t of g.tappe) {
+    if (t.luogo && !isTrasporto(t.tipo)) set.add(t.luogo.split(",")[0]);
+    if (t.luogoA) set.add(t.luogoA.split(",")[0]);
+  }
+  return [...set];
+}
+$("btnAggiungiFoto").addEventListener("click", () => {
+  $("elencoLocalita").innerHTML = localitaSuggerite().map((l) => `<option value="${l}">`).join("");
+  $("fLocalita").value = "";
+  $("veloFoto").classList.add("aperto");
+});
+$("fAnnulla").addEventListener("click", () => $("veloFoto").classList.remove("aperto"));
+$("fScegli").addEventListener("click", () => $("fileFoto").click());
+$("fileFoto").addEventListener("change", async (e) => {
+  const localita = $("fLocalita").value.trim() || "Senza località";
+  const files = [...e.target.files];
+  $("veloFoto").classList.remove("aperto");
+  for (const f of files) {
+    const blob = await comprimi(f);
+    await dbPut("foto", { id: Date.now() + Math.random(), viaggioId: corrente.id, localita, quando: Date.now(), blob });
+  }
+  e.target.value = "";
+  renderFoto();
+});
+let fotoCorrenti = [];
+async function renderFoto() {
+  const tutte = (await dbTutti("foto")).filter((f) => f.viaggioId === corrente.id);
+  tutte.sort((a, b) => a.quando - b.quando);
+  fotoCorrenti = tutte;
+  const cont = $("grigliaFoto"); cont.innerHTML = "";
+  if (!tutte.length) {
+    cont.innerHTML = '<div class="vuoto" style="text-align:center;padding:20px">Nessuna foto ancora. Aggiungi le prime! 📸</div>';
+    return;
+  }
+  const gruppi = {};
+  for (const f of tutte) (gruppi[f.localita] = gruppi[f.localita] || []).push(f);
+  for (const [loc, foto] of Object.entries(gruppi)) {
+    const sez = document.createElement("div"); sez.className = "gruppo-foto";
+    sez.innerHTML = `<h2>📍 ${loc} <small style="color:#a8a29e">(${foto.length})</small></h2>`;
+    const griglia = document.createElement("div"); griglia.className = "griglia";
+    for (const f of foto) {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(f.blob);
+      img.addEventListener("click", () => apriVisore(f));
+      griglia.appendChild(img);
+    }
+    sez.appendChild(griglia); cont.appendChild(sez);
+  }
+}
+let fotoAperta = null;
+function apriVisore(f) {
+  fotoAperta = f;
+  $("visoreImg").src = URL.createObjectURL(f.blob);
+  $("visoreDida").textContent = "📍 " + f.localita;
+  $("visore").classList.remove("nascosto");
+}
+$("visoreChiudi").addEventListener("click", () => $("visore").classList.add("nascosto"));
+$("visoreElimina").addEventListener("click", async () => {
+  if (!fotoAperta || !confirm("Eliminare questa foto?")) return;
+  await dbElimina("foto", fotoAperta.id);
+  $("visore").classList.add("nascosto");
+  renderFoto();
+});
+// Album: scorrimento di tutte le foto, raggruppate per località
+let albumIndice = 0, albumTimer = null;
+$("btnAlbum").addEventListener("click", () => {
+  if (!fotoCorrenti.length) return alert("Aggiungi prima qualche foto!");
+  albumIndice = 0;
+  mostraFotoAlbum();
+  $("album").classList.remove("nascosto");
+  clearInterval(albumTimer);
+  albumTimer = setInterval(avantiAlbum, 2800);
+});
+function mostraFotoAlbum() {
+  const f = fotoCorrenti[albumIndice];
+  $("albumImg").src = URL.createObjectURL(f.blob);
+  $("albumDida").textContent = `📍 ${f.localita} · ${albumIndice + 1}/${fotoCorrenti.length}`;
+}
+function avantiAlbum() {
+  albumIndice = (albumIndice + 1) % fotoCorrenti.length;
+  mostraFotoAlbum();
+}
+$("albumAvanti").addEventListener("click", avantiAlbum);
+$("albumChiudi").addEventListener("click", () => {
+  clearInterval(albumTimer);
+  $("album").classList.add("nascosto");
+});
+
+// ============ BIGLIETTI ============
+$("btnAggiungiBiglietto").addEventListener("click", () => {
+  $("bNome").value = "";
+  $("veloBiglietto").classList.add("aperto");
+});
+$("bAnnulla").addEventListener("click", () => $("veloBiglietto").classList.remove("aperto"));
+$("bScegli").addEventListener("click", () => {
+  if (!$("bNome").value.trim()) return alert("Dai un nome al biglietto!");
+  $("fileBiglietto").click();
+});
+$("fileBiglietto").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $("veloBiglietto").classList.remove("aperto");
+  const blob = f.type.startsWith("image/") ? await comprimi(f) : f;
+  await dbPut("biglietti", {
+    id: Date.now(), viaggioId: corrente.id,
+    nome: $("bNome").value.trim(), tipo: $("bTipo").value,
+    mime: f.type.startsWith("image/") ? "image/jpeg" : f.type, blob,
+  });
+  e.target.value = "";
+  renderBiglietti();
+});
+async function renderBiglietti() {
+  const tutti = (await dbTutti("biglietti")).filter((b) => b.viaggioId === corrente.id);
+  const cont = $("listaBiglietti"); cont.innerHTML = "";
+  if (!tutti.length) {
+    cont.innerHTML = '<div class="vuoto" style="text-align:center;padding:20px">Nessun biglietto salvato.<br>Carica qui PDF e foto di voli, treni e prenotazioni 🎫</div>';
+    return;
+  }
+  const icone = { volo: "✈️", treno: "🚄", hotel: "🛏️", attivita: "🎟️", altro: "📎" };
+  for (const b of tutti) {
+    const div = document.createElement("div"); div.className = "biglietto";
+    div.innerHTML = `
+      <div class="ico">${icone[b.tipo] || "📎"}</div>
+      <div class="info"><b>${b.nome}</b><span>${b.mime.includes("pdf") ? "Documento PDF" : "Immagine"}</span></div>
+      <button class="apri">👁️</button>
+      <button class="cancella">🗑️</button>`;
+    div.querySelector(".apri").addEventListener("click", () => {
+      const url = URL.createObjectURL(b.blob);
+      if (b.mime.includes("pdf")) window.open(url);
+      else { fotoAperta = null; $("visoreImg").src = url; $("visoreDida").textContent = "🎫 " + b.nome; $("visore").classList.remove("nascosto"); }
+    });
+    div.querySelector(".cancella").addEventListener("click", async () => {
+      if (!confirm('Eliminare "' + b.nome + '"?')) return;
+      await dbElimina("biglietti", b.id);
+      renderBiglietti();
+    });
+    cont.appendChild(div);
+  }
+}
 
 // ============ NAVIGAZIONE ============
 function mostraVista(nome) {
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("attiva", x.dataset.vista === nome));
-  $("vistaItinerario").classList.toggle("nascosto", nome !== "itinerario");
-  $("vistaBudget").classList.toggle("nascosto", nome !== "budget");
-  $("vistaMappa").classList.toggle("nascosto", nome !== "mappa");
-  $("fab").classList.toggle("nascosto", nome === "mappa");
+  for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti"]) {
+    $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
+  }
+  $("fab").classList.toggle("nascosto", nome !== "itinerario" && nome !== "budget");
   if (nome === "mappa" && mappa) setTimeout(() => mappa.resize(), 50);
 }
 document.querySelectorAll(".tab").forEach((b) =>
@@ -660,7 +1041,7 @@ document.querySelectorAll(".velo").forEach((v) =>
   v.addEventListener("click", (e) => { if (e.target === v) v.classList.remove("aperto"); }));
 
 // ============ AVVIO ============
-renderHome();
+apriDB().then(renderHome);
 </script>
 </body>
 </html>
