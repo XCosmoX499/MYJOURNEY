@@ -65,10 +65,15 @@
   .fab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1c1917; color: #fff; border: none; border-radius: 999px; padding: 14px 26px; font-size: 15px; font-weight: 700; box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 20; }
 
   /* Mappa */
-  #vistaMappa { padding: 0; }
+  #vistaMappa { padding: 0; position: relative; }
   #contenitoreMappa { height: calc(100vh - 270px); min-height: 380px; }
   .mappa-avviso { padding: 24px 20px; font-size: 14px; color: #57534e; line-height: 1.55; }
   .mappa-avviso code { background: #e7e5e4; border-radius: 6px; padding: 2px 6px; font-size: 12px; }
+  .btn-viaggio { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 5;
+    background: #E4572E; color: #fff; border: none; border-radius: 999px; padding: 12px 22px;
+    font-size: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+  .btn-viaggio:disabled { background: #4A5878; }
+  .veicolo-mappa { font-size: 30px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
 
   .velo { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
   .velo.aperto { display: flex; }
@@ -87,6 +92,17 @@
   .azioni .salva:disabled { background: #d6d3d1; border-color: #d6d3d1; }
   .azioni .pericolo { color: #C9514C; border-color: #f0d4d2; }
   .nascosto { display: none !important; }
+
+  /* Suggerimenti di ricerca luogo */
+  .campo-luogo { position: relative; }
+  .lista-sugg { position: absolute; top: 100%; left: 0; right: 0; margin-top: -8px; z-index: 10;
+    background: #fff; border: 1px solid #d6d3d1; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 8px 22px rgba(0,0,0,.14); }
+  .lista-sugg button { display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 11px 13px; font-size: 14px; color: #1c1917; border-bottom: 1px solid #f5f5f4; }
+  .lista-sugg button small { display: block; color: #a8a29e; font-size: 12px; margin-top: 1px; }
+  .lista-sugg button:last-child { border-bottom: none; }
+  .luogo-ok { font-size: 12px; color: #2A9D8F; font-weight: 600; margin: -6px 2px 10px; }
 </style>
 </head>
 <body>
@@ -131,6 +147,7 @@
       Sul tuo sito pubblicato (github.io) funzionerà normalmente.
     </div>
     <div id="contenitoreMappa"></div>
+    <button class="btn-viaggio nascosto" id="btnViaggio">▶ Riproduci viaggio</button>
   </main>
 </div>
 
@@ -168,8 +185,12 @@
       <div><label>Ora</label><input id="tOra" type="time" /></div>
       <div><label>Costo €</label><input id="tCosto" type="number" inputmode="decimal" placeholder="0" /></div>
     </div>
-    <label>Luogo (es. "Colosseo, Roma" — verrà cercato sulla mappa)</label>
-    <input id="tLuogo" placeholder="Es. Torre Eiffel, Parigi" />
+    <label>Luogo — scrivi e scegli dai suggerimenti</label>
+    <div class="campo-luogo">
+      <input id="tLuogo" placeholder="Es. Torre Eiffel, Parigi" autocomplete="off" />
+      <div class="lista-sugg nascosto" id="tSuggerimenti"></div>
+    </div>
+    <div class="luogo-ok nascosto" id="tLuogoOk">✓ Posizione trovata sulla mappa</div>
     <div class="azioni">
       <button class="pericolo nascosto" id="tElimina">Elimina</button>
       <button id="tAnnulla">Annulla</button>
@@ -179,9 +200,9 @@
 </div>
 
 <script>
-// ⬇️⬇️ INCOLLA QUI IL TUO TOKEN MAPBOX (tra le virgolette) ⬇️⬇️
+// ⬇️⬇️ TOKEN MAPBOX ⬇️⬇️
 const MAPBOX_TOKEN = "pk.eyJ1IjoieGNvc21veCIsImEiOiJjbXE5NHhuaTQwZ3pmMnFzN3N2dGc0YXdnIn0.uW4MNFKEE85ndhKNLU0-5w";
-// ⬆️⬆️ ================================================== ⬆️⬆️
+// ⬆️⬆️ ============== ⬆️⬆️
 
 // ============ COSTANTI E STATO ============
 const TIPI = {
@@ -198,7 +219,8 @@ const eur = (n) => n === 0 ? "Gratis" : "€ " + n.toLocaleString("it-IT");
 let viaggi = [];
 try { viaggi = JSON.parse(localStorage.getItem(CHIAVE)) || []; } catch { viaggi = []; }
 let corrente = null, tappaInModifica = null, viaggioInModifica = false;
-let mappa = null, marcatori = [];
+let mappa = null, marcatori = [], mappaPronta = false, animazioneInCorso = false;
+let coordScelta = null; // coordinate scelte dai suggerimenti nel form tappa
 const salva = () => { try { localStorage.setItem(CHIAVE, JSON.stringify(viaggi)); } catch {} };
 
 // ============ DATE E FASCE ORARIE ============
@@ -300,7 +322,6 @@ function renderItinerario() {
       const d = document.createElement("div"); d.className = "vuoto";
       d.textContent = "Nessuna tappa"; sez.appendChild(d);
     }
-    // Ordino per orario e raggruppo in fasce
     const ordinate = [...g.tappe].sort((a, b) => (a.ora === "—" ? "99" : a.ora) > (b.ora === "—" ? "99" : b.ora) ? 1 : -1);
     let fasciaCorrente = -1;
     for (const t of ordinate) {
@@ -351,6 +372,46 @@ function renderBudget() {
 // ============ MAPPA (Mapbox) ============
 const tokenValido = () => MAPBOX_TOKEN.startsWith("pk.");
 const mapboxDisponibile = () => typeof mapboxgl !== "undefined";
+
+// Tutte le tappe con coordinate, in ordine cronologico (giorno + ora)
+function tappePerRotta() {
+  const out = [];
+  for (const g of corrente.giorni) {
+    const ordinate = [...g.tappe].sort((a, b) => (a.ora === "—" ? "99" : a.ora) > (b.ora === "—" ? "99" : b.ora) ? 1 : -1);
+    for (const t of ordinate) if (t.coord) out.push({ t, g });
+  }
+  return out;
+}
+// Punto lungo un arco curvo tra a e b (effetto rotta aerea)
+function puntoArco(a, b, t) {
+  const dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + dist * 0.18];
+  const u = 1 - t;
+  return [u*u*a[0] + 2*u*t*m[0] + t*t*b[0], u*u*a[1] + 2*u*t*m[1] + t*t*b[1]];
+}
+function lineaArco(a, b) {
+  const pts = [];
+  for (let i = 0; i <= 50; i++) pts.push(puntoArco(a, b, i / 50));
+  return pts;
+}
+// Disegna/aggiorna le rotte tratteggiate tra tappe consecutive
+function aggiornaRotte() {
+  if (!mappa || !mappaPronta || !corrente) return;
+  const lista = tappePerRotta();
+  const linee = [];
+  for (let i = 0; i < lista.length - 1; i++) {
+    linee.push({ type: "Feature", properties: {}, geometry: { type: "LineString",
+      coordinates: lineaArco(lista[i].t.coord, lista[i + 1].t.coord) } });
+  }
+  const dati = { type: "FeatureCollection", features: linee };
+  if (mappa.getSource("rotte")) mappa.getSource("rotte").setData(dati);
+  else {
+    mappa.addSource("rotte", { type: "geojson", data: dati });
+    mappa.addLayer({ id: "rotte", type: "line", source: "rotte",
+      paint: { "line-color": "#E4572E", "line-width": 2.5, "line-dasharray": [2, 2.5], "line-opacity": .85 } });
+  }
+  $("btnViaggio").classList.toggle("nascosto", lista.length < 2);
+}
 function renderMappa() {
   $("mappaAvviso").classList.toggle("nascosto", tokenValido());
   $("mappaOffline").classList.toggle("nascosto", !tokenValido() || mapboxDisponibile());
@@ -364,8 +425,8 @@ function renderMappa() {
       center: [12.5, 41.9], zoom: 3,
     });
     mappa.addControl(new mapboxgl.NavigationControl());
+    mappa.on("load", () => { mappaPronta = true; aggiornaRotte(); });
   }
-  // Pulisco i vecchi marcatori e aggiungo quelli del viaggio corrente
   marcatori.forEach((m) => m.remove()); marcatori = [];
   const punti = [];
   for (const g of corrente.giorni) for (const t of g.tappe) {
@@ -376,19 +437,67 @@ function renderMappa() {
       .setLngLat(t.coord).setPopup(popup).addTo(mappa);
     marcatori.push(m); punti.push(t.coord);
   }
-  if (punti.length) {
+  if (punti.length && !animazioneInCorso) {
     const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
     mappa.fitBounds(bounds, { padding: 60, maxZoom: 13 });
   }
+  aggiornaRotte();
 }
-// Trasforma il testo "luogo" in coordinate (geocoding Mapbox)
-async function geocodifica(testo) {
-  if (!tokenValido() || !testo) return null;
+
+// ===== Timeline animata: il mezzo percorre le rotte tappa per tappa =====
+const easeInOut = (t) => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+const mezzoPer = (tipo) => tipo === "volo" ? "✈️" : tipo === "treno" ? "🚄" : "🚗";
+const attesa = (ms) => new Promise((r) => setTimeout(r, ms));
+function animaSegmento(a, b, emoji, durata) {
+  return new Promise((fine) => {
+    const el = document.createElement("div");
+    el.className = "veicolo-mappa"; el.textContent = emoji;
+    const veicolo = new mapboxgl.Marker({ element: el }).setLngLat(a).addTo(mappa);
+    const t0 = performance.now();
+    (function passo(ora) {
+      const t = Math.min((ora - t0) / durata, 1);
+      veicolo.setLngLat(puntoArco(a, b, easeInOut(t)));
+      if (t < 1) requestAnimationFrame(passo);
+      else { veicolo.remove(); fine(); }
+    })(performance.now());
+  });
+}
+$("btnViaggio").addEventListener("click", async () => {
+  if (animazioneInCorso) return;
+  const lista = tappePerRotta();
+  if (lista.length < 2) return;
+  animazioneInCorso = true;
+  const btn = $("btnViaggio");
+  btn.disabled = true; btn.textContent = "In viaggio…";
+  for (let i = 0; i < lista.length - 1; i++) {
+    const a = lista[i].t.coord, b = lista[i + 1].t.coord;
+    // La camera inquadra il segmento
+    mappa.fitBounds(new mapboxgl.LngLatBounds(a, a).extend(b), { padding: 90, maxZoom: 12, duration: 1100 });
+    await attesa(1200);
+    // Il mezzo dipende dal tipo della tappa di arrivo: volo ✈️, treno 🚄, altro 🚗
+    const dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    await animaSegmento(a, b, mezzoPer(lista[i + 1].t.tipo), Math.min(2200 + dist * 60, 5500));
+    await attesa(350);
+  }
+  // Vista finale su tutto il viaggio
+  const punti = lista.map((x) => x.t.coord);
+  const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
+  mappa.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 1400 });
+  btn.disabled = false; btn.textContent = "↺ Rivedi viaggio";
+  animazioneInCorso = false;
+});
+
+// ===== Ricerca luoghi (geocoding Mapbox) =====
+async function cercaLuoghi(testo, limite) {
+  if (!tokenValido() || !testo) return [];
   try {
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(testo)}.json?access_token=${MAPBOX_TOKEN}&limit=1&language=it`);
+    // Se il viaggio ha già una tappa con coordinate, do priorità ai luoghi vicini
+    const prossimita = corrente && tappePerRotta().length
+      ? "&proximity=" + tappePerRotta()[0].t.coord.join(",") : "";
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(testo)}.json?access_token=${MAPBOX_TOKEN}&limit=${limite || 5}&language=it${prossimita}`);
     const j = await r.json();
-    return j.features && j.features[0] ? j.features[0].center : null;
-  } catch { return null; }
+    return j.features || [];
+  } catch { return []; }
 }
 
 // ============ MODALE VIAGGIO ============
@@ -456,11 +565,44 @@ function apriModaleTappa(modifica) {
   $("tOra").value = t && t.ora !== "—" ? t.ora : "";
   $("tCosto").value = t && t.costo ? t.costo : "";
   $("tLuogo").value = t ? t.luogo : "";
+  coordScelta = t ? t.coord : null;
+  $("tLuogoOk").classList.toggle("nascosto", !coordScelta);
+  $("tSuggerimenti").classList.add("nascosto");
   $("tSalva").disabled = !t;
   $("tElimina").classList.toggle("nascosto", !t);
   $("veloTappa").classList.add("aperto");
 }
 $("tTitolo").addEventListener("input", () => { $("tSalva").disabled = $("tTitolo").value.trim() === ""; });
+
+// Suggerimenti mentre si digita il luogo
+let timerSugg = null;
+$("tLuogo").addEventListener("input", () => {
+  coordScelta = null;                                  // testo cambiato: la posizione va riscelta
+  $("tLuogoOk").classList.add("nascosto");
+  clearTimeout(timerSugg);
+  const testo = $("tLuogo").value.trim();
+  if (testo.length < 3) { $("tSuggerimenti").classList.add("nascosto"); return; }
+  timerSugg = setTimeout(async () => {
+    const risultati = await cercaLuoghi(testo, 5);
+    const box = $("tSuggerimenti"); box.innerHTML = "";
+    if (!risultati.length) { box.classList.add("nascosto"); return; }
+    for (const f of risultati) {
+      const b = document.createElement("button");
+      const nome = f.text || f.place_name;
+      const resto = f.place_name && f.place_name !== nome ? f.place_name.replace(nome + ", ", "") : "";
+      b.innerHTML = `📍 ${nome}${resto ? `<small>${resto}</small>` : ""}`;
+      b.addEventListener("click", () => {
+        $("tLuogo").value = f.place_name;
+        coordScelta = f.center;
+        box.classList.add("nascosto");
+        $("tLuogoOk").classList.remove("nascosto");
+      });
+      box.appendChild(b);
+    }
+    box.classList.remove("nascosto");
+  }, 350);
+});
+
 $("tAnnulla").addEventListener("click", () => $("veloTappa").classList.remove("aperto"));
 $("tElimina").addEventListener("click", () => {
   if (!tappaInModifica) return;
@@ -482,22 +624,21 @@ $("tSalva").addEventListener("click", async () => {
   let tappa;
   if (tappaInModifica) {
     tappa = tappaInModifica.tappa;
-    const luogoCambiato = luogoNuovo !== tappa.luogo;
     Object.assign(tappa, dati);
-    if (luogoCambiato) tappa.coord = null;
+    tappa.coord = luogoNuovo ? coordScelta : null;
     if (giornoDest.id !== tappaInModifica.giorno.id) {
       tappaInModifica.giorno.tappe = tappaInModifica.giorno.tappe.filter((x) => x.id !== tappa.id);
       giornoDest.tappe.push(tappa);
     }
   } else {
-    tappa = { id: Date.now(), ...dati, coord: null };
+    tappa = { id: Date.now(), ...dati, coord: luogoNuovo ? coordScelta : null };
     giornoDest.tappe.push(tappa);
   }
   salva(); $("veloTappa").classList.remove("aperto"); renderViaggio();
-  // Cerco le coordinate del luogo in background e aggiorno la mappa
+  // Se non è stato scelto un suggerimento, cerco comunque il luogo in background
   if (luogoNuovo && !tappa.coord) {
-    const c = await geocodifica(luogoNuovo);
-    if (c) { tappa.coord = c; salva(); renderMappa(); }
+    const r = await cercaLuoghi(luogoNuovo, 1);
+    if (r[0]) { tappa.coord = r[0].center; salva(); renderMappa(); }
   }
 });
 
