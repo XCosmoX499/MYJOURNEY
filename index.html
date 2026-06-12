@@ -204,28 +204,30 @@
   .bwrap .biglietto { margin: 0; position: relative; z-index: 1; will-change: transform; }
   .apri-pill { background: #1c1917; color: #fff; border: none; border-radius: 999px;
     padding: 9px 18px; font-weight: 700; font-size: 13px; flex: none; align-self: center; }
-  #vistaMappa { padding: 0; position: relative; }
-  #barraLuce {
-    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 4px; background: #fff; border-radius: 999px;
-    padding: 5px 8px; box-shadow: 0 4px 14px rgba(0,0,0,.18); z-index: 5;
+  /* Mappa immersiva: copre tutto, restano solo i suoi comandi */
+  #vistaMappa { position: fixed; inset: 0; z-index: 150; padding: 0; background: #0a1228; }
+  #vistaMappa:not(.nascosto) { animation: immersione .45s ease; }
+  @keyframes immersione { from { opacity: 0; transform: scale(1.045); } to { opacity: 1; transform: none; } }
+  #btnCasa {
+    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; z-index: 6;
+    width: 48px; height: 48px; border-radius: 50%; border: none; font-size: 21px;
+    background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.35);
   }
-  #barraLuce button {
-    border: none; background: transparent; font-size: 18px;
-    width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+  #colonnaMappa {
+    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 6;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-  #barraLuce button.scelto { background: #4264FB22; box-shadow: inset 0 0 0 2px #4264FB; }
-  #barra3d {
-    position: absolute; right: 12px; bottom: 96px; z-index: 5;
-    display: flex; flex-direction: column; gap: 8px;
+  #colonnaMappa button {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: #fff; font-size: 19px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.28);
   }
-  #barra3d button {
-    width: 46px; height: 46px; border-radius: 50%; border: none;
-    background: #fff; font-size: 21px; cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0,0,0,.18);
-  }
-  #contenitoreMappa { height: calc(100vh - 270px); min-height: 380px; }
-  .mappa-avviso { padding: 24px 20px; font-size: 14px; color: #57534e; line-height: 1.55; }
+  #barraLuce, #barra3d { display: flex; flex-direction: column; gap: 8px; }
+  #barraLuce button.scelto { background: #FFE9A8; box-shadow: 0 4px 14px rgba(0,0,0,.28), inset 0 0 0 2px #C9A227; }
+  #colonnaMappa .sep { width: 26px; height: 2px; border-radius: 2px; background: #ffffff66; }
+  #contenitoreMappa { position: absolute; inset: 0; }
+  .mappa-avviso { position: relative; z-index: 5; margin: calc(72px + env(safe-area-inset-top, 0px)) 16px 0;
+    background: #fff; border-radius: 14px; padding: 18px; font-size: 14px; color: #57534e; line-height: 1.55; }
   .mappa-avviso code { background: #e7e5e4; border-radius: 6px; padding: 2px 6px; font-size: 12px; }
   .btn-viaggio { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 5;
     background: #E4572E; color: #fff; border: none; border-radius: 999px; padding: 12px 22px;
@@ -352,15 +354,19 @@
       🗺️ <b>La mappa non può caricarsi in questa anteprima</b> perché le risorse esterne di Mapbox sono bloccate qui in chat. Sul tuo sito pubblicato funzionerà normalmente.
     </div>
     <div id="contenitoreMappa"></div>
-    <div id="barraLuce">
-      <button data-luce="dawn" title="Alba">🌅</button>
-      <button data-luce="day" title="Giorno">☀️</button>
-      <button data-luce="dusk" title="Tramonto">🌇</button>
-      <button data-luce="night" title="Notte">🌙</button>
-    </div>
-    <div id="barra3d">
-      <button id="btn3d" title="Tuffati nella prossima tappa in 3D">🏙️</button>
-      <button id="btnPanorama" title="Torna alla panoramica">🌍</button>
+    <button id="btnCasa" title="Torna al viaggio">🏠</button>
+    <div id="colonnaMappa">
+      <div id="barraLuce">
+        <button data-luce="dawn" title="Alba">🌅</button>
+        <button data-luce="day" title="Giorno">☀️</button>
+        <button data-luce="dusk" title="Tramonto">🌇</button>
+        <button data-luce="night" title="Notte">🌙</button>
+      </div>
+      <div class="sep"></div>
+      <div id="barra3d">
+        <button id="btn3d" title="Tuffati nella prossima tappa in 3D">🏙️</button>
+        <button id="btnPanorama" title="Torna alla panoramica">🌍</button>
+      </div>
     </div>
     <button class="btn-viaggio nascosto" id="btnViaggio">▶ Riproduci viaggio</button>
   </main>
@@ -1289,7 +1295,6 @@ function renderMappa() {
       center: [12.5, 41.9], zoom: 3,
       pitch: 45, // inclinazione per apprezzare il 3D
     });
-    mappa.addControl(new mapboxgl.NavigationControl());
     mappa.on("load", () => { mappaPronta = true; aggiornaRotte(); });
     // Selettore luce: 🌅 alba · ☀️ giorno · 🌇 tramonto · 🌙 notte
     document.querySelectorAll("#barraLuce button").forEach((b) => {
@@ -2003,9 +2008,11 @@ $("fileEsperienza").addEventListener("change", async (e) => {
 // ============ NAVIGAZIONE ============
 let vistaAttuale = "itinerario";
 $("btnGlobo").addEventListener("click", () => mostraVista(vistaAttuale === "mappa" ? "itinerario" : "mappa"));
+$("btnCasa").addEventListener("click", () => mostraVista("itinerario"));
 function mostraVista(nome) {
   vistaAttuale = nome;
   $("btnGlobo").classList.toggle("attivo", nome === "mappa");
+  if (nome === "mappa") setTimeout(() => { if (mappa) try { mappa.resize(); } catch {} }, 80); // il contenitore è cambiato: avviso Mapbox
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("attiva", x.dataset.vista === nome));
   for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "dafare"]) {
     $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
