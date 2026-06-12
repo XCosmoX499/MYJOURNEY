@@ -170,7 +170,8 @@
   .spesa-riga small { color: #78716c; display: block; }
   .spesa-riga .x { background: none; border: none; color: #d6d3d1; font-size: 17px; }
   .btn-cambio { position: absolute; top: 12px; right: 12px; width: 42px; height: 42px;
-    border-radius: 50%; border: none; background: #1c1917; color: #fff; font-size: 19px;
+    border-radius: 50%; border: none; background: #1c1917;
+    display: flex; align-items: center; justify-content: center;
     box-shadow: 0 3px 10px rgba(0,0,0,.25); }
   .calc-display { background: #1c1917; border-radius: 16px; padding: 14px 12px; margin-top: 10px; position: relative; }
   .calc-riga { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 6px; padding-right: 52px; }
@@ -192,6 +193,17 @@
     z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; pointer-events: none;
     transition: opacity .25s ease, transform .25s ease; max-width: 86vw; text-align: center; }
   #toast.visibile { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .btn-globo { width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: #ffffff26; font-size: 19px; line-height: 1; }
+  .btn-globo.attivo { background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  .bwrap { position: relative; overflow: hidden; border-radius: 14px; margin: 8px 0; }
+  .bwrap .b-azioni { position: absolute; top: 0; bottom: 0; right: 0; width: 120px; display: flex; }
+  .bwrap .b-azioni button { flex: 1; border: none; color: #fff; font-size: 17px; }
+  .ba-mod { background: #4264FB; }
+  .ba-del { background: #dc2626; }
+  .bwrap .biglietto { margin: 0; position: relative; z-index: 1; will-change: transform; }
+  .apri-pill { background: #1c1917; color: #fff; border: none; border-radius: 999px;
+    padding: 9px 18px; font-weight: 700; font-size: 13px; flex: none; align-self: center; }
   #vistaMappa { padding: 0; position: relative; }
   #barraLuce {
     position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -314,7 +326,10 @@
   <header>
     <div class="testa-riga">
       <button class="btn-ghost" id="indietro">← Viaggi</button>
-      <button class="btn-ghost" id="modificaViaggio">✎ Modifica</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-globo" id="btnGlobo" title="Mappa del viaggio">🌍</button>
+        <button class="btn-ghost" id="modificaViaggio">✎ Modifica</button>
+      </div>
     </div>
     <h1 id="nomeViaggio"></h1>
     <div class="date" id="dateViaggio"></div>
@@ -324,7 +339,6 @@
     <button class="tab attiva" data-vista="itinerario">🗓️ Itinerario</button>
     <button class="tab" data-vista="dafare">✨ Imperdibili</button>
     <button class="tab" data-vista="budget">💰 Budget</button>
-    <button class="tab" data-vista="mappa">🗺️ Mappa</button>
     <button class="tab" data-vista="foto">📷 Foto</button>
     <button class="tab" data-vista="biglietti">🎫 Biglietti</button>
   </div>
@@ -547,6 +561,7 @@
       <option value="treno">🚄 Treno</option>
       <option value="hotel">🛏️ Hotel/B&B</option>
       <option value="attivita">🎟️ Attività</option>
+      <option value="qr">🔳 QR / Codice d'ingresso</option>
       <option value="altro">📎 Altro</option>
     </select>
     <div class="azioni">
@@ -564,6 +579,13 @@
   <div class="visore-azioni">
     <button id="visoreElimina">🗑️ Elimina</button>
     <button id="visoreChiudi">✕ Chiudi</button>
+  </div>
+</div>
+<div class="visore nascosto" id="visoreQr" style="background:#fff">
+  <img id="qrImg" alt="" style="max-width:88vw;max-height:62vh;border-radius:10px" />
+  <div class="dida" id="qrDida" style="color:#1c1917"></div>
+  <div class="visore-azioni">
+    <button id="qrChiudi" style="background:#1c1917;color:#fff">✕ Chiudi</button>
   </div>
 </div>
 <div class="visore nascosto" id="album">
@@ -686,17 +708,26 @@ function dbElimina(store, id) {
     tx.oncomplete = () => res(); tx.onerror = () => res();
   });
 }
-// Comprime una foto (max 1280px) per non riempire la memoria
-// Comprime una foto (max 1280px) e la trasforma in testo base64, visualizzabile ovunque
-function comprimi(file) {
+// Comprime una foto (max 1280px) in base64; con "timbro" imprime il nome dell'esperienza
+function comprimi(file, timbro) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {
       try {
-        const max = 1280, s = Math.min(1, max / Math.max(img.width, img.height));
+        const max = 1280, sc = Math.min(1, max / Math.max(img.width, img.height));
         const c = document.createElement("canvas");
-        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        if (timbro) {
+          // stile "data impressa" delle vecchie foto: corsivo bianco con ombra, in basso a sinistra
+          const fs = Math.max(20, Math.round(c.width * 0.045));
+          ctx.font = "italic 700 " + fs + "px Georgia, 'Times New Roman', serif";
+          ctx.textBaseline = "bottom";
+          ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 7; ctx.shadowOffsetY = 2;
+          ctx.fillStyle = "#fff";
+          ctx.fillText(timbro, Math.round(fs * 0.8), c.height - Math.round(fs * 0.6), c.width - fs * 1.6);
+        }
         res(c.toDataURL("image/jpeg", .82));
       } catch (e) { rej(e); }
     };
@@ -934,7 +965,14 @@ function renderBudget() {
       <div class="eyebrow" style="color:#78716c">Totale viaggio</div>
       <div class="cifra">${eur(totale)}</div>
       <div class="sub" id="totValuta"></div>
-      <button class="btn-cambio" id="btnCambio" title="Cambio valuta">💱</button>
+      <button class="btn-cambio" id="btnCambio" title="Cambio valuta">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <text x="3" y="10" font-size="9.5" font-weight="800" fill="#fff" stroke="none">€</text>
+          <text x="13.5" y="21" font-size="9.5" font-weight="800" fill="#fff" stroke="none">¥</text>
+          <path d="M13 5 h6 m0 0 l-2.4 -2.4 M19 5 l-2.4 2.4"/>
+          <path d="M11 19 h-6 m0 0 l2.4 -2.4 M5 19 l2.4 2.4"/>
+        </svg>
+      </button>
     </div>
     <div class="card"><b>👥 Spese per viaggiatore</b>
       ${nomi.map((n, i) => `
@@ -1106,23 +1144,36 @@ function mostraTasso(t, origine) {
 }
 async function caricaTasso(cod) {
   const cache = JSON.parse(localStorage.getItem("tasso-" + cod) || "null");
-  try {
-    const r = await fetch("https://api.frankfurter.app/latest?from=EUR&to=" + cod);
-    const j = await r.json();
-    if (!j.rates || !j.rates[cod]) throw new Error("tasso assente");
-    localStorage.setItem("tasso-" + cod, JSON.stringify({ t: j.rates[cod], d: j.date }));
-    mostraTasso(j.rates[cod], "tasso BCE del " + j.date);
-  } catch {
-    if (cache) mostraTasso(cache.t, cache.d === "manuale" ? "tasso manuale" : "ultimo tasso noto (" + cache.d + ")");
-    else {
-      $("cvInfo").innerHTML = 'Sei offline e non ho tassi salvati: <u id="cvManOff" style="cursor:pointer">inserisci un tasso manuale</u>';
-      const man = document.getElementById("cvManOff");
-      if (man) man.addEventListener("click", async () => {
-        const v = await chiediTesto("Quanto vale 1 € in " + cod + "?");
-        const n = Number(String(v || "").replace(",", "."));
-        if (n > 0) { localStorage.setItem("tasso-" + cod, JSON.stringify({ t: n, d: "manuale" })); mostraTasso(n, "tasso manuale"); }
-      });
-    }
+  // Tre fonti gratuite in cascata: se una non risponde, provo la successiva
+  const fonti = [
+    { url: "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=" + cod,
+      leggi: (j) => ({ t: j.rates && j.rates[cod], d: j.date }), nome: "BCE" },
+    { url: "https://api.frankfurter.app/latest?from=EUR&to=" + cod,
+      leggi: (j) => ({ t: j.rates && j.rates[cod], d: j.date }), nome: "BCE" },
+    { url: "https://open.er-api.com/v6/latest/EUR",
+      leggi: (j) => ({ t: j.rates && j.rates[cod], d: String(j.time_last_update_utc || "").slice(5, 16).trim() }), nome: "ER-API" },
+  ];
+  for (const f of fonti) {
+    try {
+      const r = await fetch(f.url);
+      const { t, d } = f.leggi(await r.json());
+      if (t > 0) {
+        localStorage.setItem("tasso-" + cod, JSON.stringify({ t, d }));
+        mostraTasso(t, "tasso " + f.nome + " del " + d);
+        return;
+      }
+    } catch {}
+  }
+  // Nessuna fonte raggiungibile: ultimo tasso salvato, oppure manuale
+  if (cache) mostraTasso(cache.t, cache.d === "manuale" ? "tasso manuale" : "ultimo tasso noto (" + cache.d + ")");
+  else {
+    $("cvInfo").innerHTML = 'Sei offline e non ho tassi salvati: <u id="cvManOff" style="cursor:pointer">inserisci un tasso manuale</u>';
+    const man = document.getElementById("cvManOff");
+    if (man) man.addEventListener("click", async () => {
+      const v = await chiediTesto("Quanto vale 1 € in " + cod + "?");
+      const n = Number(String(v || "").replace(",", "."));
+      if (n > 0) { localStorage.setItem("tasso-" + cod, JSON.stringify({ t: n, d: "manuale" })); mostraTasso(n, "tasso manuale"); }
+    });
   }
 }
 
@@ -1160,6 +1211,17 @@ function lucePerOra() {
   if (h >= 18 && h < 21) return "dusk";
   return "night";
 }
+
+// La luce della mappa segue l'orologio: ogni minuto controllo se è cambiata la fascia
+let luceCorrente = lucePerOra();
+setInterval(() => {
+  if (!mappa || !mappaPronta) return;
+  const l = lucePerOra();
+  if (l === luceCorrente) return;
+  luceCorrente = l;
+  try { mappa.setConfigProperty("basemap", "lightPreset", l); } catch {}
+  document.querySelectorAll("#barraLuce button").forEach((b) => b.classList.toggle("scelto", b.dataset.luce === l));
+}, 60000);
 
 // ===== Tour 3D: gli edifici 3D di Mapbox Standard compaiono solo a zoom alto (15+) =====
 let puntiMappa = [], indice3d = 0;
@@ -1232,6 +1294,7 @@ function renderMappa() {
     // Selettore luce: 🌅 alba · ☀️ giorno · 🌇 tramonto · 🌙 notte
     document.querySelectorAll("#barraLuce button").forEach((b) => {
       b.addEventListener("click", () => {
+        luceCorrente = b.dataset.luce;
         try { mappa.setConfigProperty("basemap", "lightPreset", b.dataset.luce); } catch {}
         document.querySelectorAll("#barraLuce button").forEach((x) => x.classList.toggle("scelto", x === b));
       });
@@ -1626,6 +1689,7 @@ function apriVisore(f) {
   $("visore").classList.remove("nascosto");
 }
 $("visoreChiudi").addEventListener("click", () => $("visore").classList.add("nascosto"));
+$("qrChiudi").addEventListener("click", () => $("visoreQr").classList.add("nascosto"));
 $("visoreElimina").addEventListener("click", async () => {
   if (!fotoAperta) return;
   if (!(await chiediConferma("Eliminare questa foto?", "", "Elimina", true))) return;
@@ -1656,6 +1720,17 @@ $("albumAvanti").addEventListener("click", avantiAlbum);
 $("albumChiudi").addEventListener("click", () => {
   clearInterval(albumTimer);
   $("album").classList.add("nascosto");
+});
+// Swipe sull'album: ⬅️ avanti, ➡️ indietro (e lo scorrimento automatico si ferma)
+let albX0 = null;
+$("album").addEventListener("touchstart", (e) => { albX0 = e.touches[0].clientX; }, { passive: true });
+$("album").addEventListener("touchend", (e) => {
+  if (albX0 === null) return;
+  const dx = e.changedTouches[0].clientX - albX0; albX0 = null;
+  if (Math.abs(dx) < 45) return;
+  clearInterval(albumTimer); // da qui sfogli tu
+  if (dx < 0) avantiAlbum();
+  else { albumIndice = (albumIndice - 1 + fotoCorrenti.length) % fotoCorrenti.length; mostraFotoAlbum(); }
 });
 
 // ============ BIGLIETTI ============
@@ -1692,15 +1767,51 @@ async function renderBiglietti() {
     cont.innerHTML = '<div class="vuoto" style="text-align:center;padding:20px">Nessun biglietto salvato.<br>Carica qui PDF e foto di voli, treni e prenotazioni 🎫</div>';
     return;
   }
-  const icone = { volo: "✈️", treno: "🚄", hotel: "🛏️", attivita: "🎟️", altro: "📎" };
+  const icone = { volo: "✈️", treno: "🚄", hotel: "🛏️", attivita: "🎟️", qr: "🔳", altro: "📎" };
   for (const b of tutti) {
+    const wrap = document.createElement("div"); wrap.className = "bwrap";
+    wrap.innerHTML = `
+      <div class="b-azioni">
+        <button class="ba-mod">✏️</button>
+        <button class="ba-del">🗑</button>
+      </div>`;
     const div = document.createElement("div"); div.className = "biglietto";
     div.innerHTML = `
       <div class="ico">${icone[b.tipo] || "📎"}</div>
-      <div class="info"><b>${b.nome}</b><span>${b.mime.includes("pdf") ? "Documento PDF" : "Immagine"}</span></div>
-      <button class="apri">👁️</button>
-      <button class="cancella">🗑️</button>`;
-    div.querySelector(".apri").addEventListener("click", () => {
+      <div class="info"><b>${b.nome}</b><span>${b.mime.includes("pdf") ? "Documento PDF" : (b.tipo === "qr" ? "QR / codice d'ingresso" : "Immagine")}</span></div>
+      <button class="apri-pill">Apri</button>`;
+    wrap.appendChild(div);
+
+    // ----- swipe a sinistra: ✏️ rinomina, 🗑 elimina -----
+    let x0 = null, y0 = null, dx = 0, rivelata = false, orizzontale = null;
+    div.addEventListener("touchstart", (e) => {
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      dx = 0; orizzontale = null; div.style.transition = "none";
+    }, { passive: true });
+    div.addEventListener("touchmove", (e) => {
+      if (x0 === null) return;
+      dx = e.touches[0].clientX - x0;
+      const dy = e.touches[0].clientY - y0;
+      if (orizzontale === null) orizzontale = Math.abs(dx) > Math.abs(dy) + 4;
+      if (!orizzontale) return;
+      const base = rivelata ? -120 : 0;
+      div.style.transform = `translateX(${Math.min(0, Math.max(-130, base + dx))}px)`;
+    }, { passive: true });
+    div.addEventListener("touchend", () => {
+      if (x0 === null) return;
+      div.style.transition = "transform .22s ease";
+      const base = rivelata ? -120 : 0;
+      rivelata = orizzontale ? base + dx < -55 : rivelata;
+      div.style.transform = `translateX(${rivelata ? -120 : 0}px)`;
+      x0 = null;
+    });
+    div.addEventListener("click", () => {
+      if (rivelata) { rivelata = false; div.style.transform = "translateX(0)"; }
+    });
+
+    div.querySelector(".apri-pill").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (rivelata) return;
       if (b.mime.includes("pdf")) {
         try {
           const url = URL.createObjectURL(b.blob);
@@ -1708,6 +1819,10 @@ async function renderBiglietti() {
           a.href = url; a.target = "_blank"; a.rel = "noopener";
           document.body.appendChild(a); a.click(); a.remove();
         } catch { toast("Non riesco ad aprire il PDF su questo browser."); }
+      } else if (b.tipo === "qr") {
+        $("qrImg").src = srcFoto(b);
+        $("qrDida").textContent = b.nome + " — alza la luminosità per la scansione";
+        $("visoreQr").classList.remove("nascosto");
       } else {
         fotoAperta = null;
         $("visoreImg").src = srcFoto(b);
@@ -1715,12 +1830,20 @@ async function renderBiglietti() {
         $("visore").classList.remove("nascosto");
       }
     });
-    div.querySelector(".cancella").addEventListener("click", async () => {
+    wrap.querySelector(".ba-mod").addEventListener("click", async () => {
+      const nuovo = await chiediTesto("Rinomina il biglietto", b.nome);
+      if (nuovo !== null && nuovo.trim()) {
+        b.nome = nuovo.trim();
+        try { await dbPut("biglietti", b); } catch {}
+      }
+      renderBiglietti();
+    });
+    wrap.querySelector(".ba-del").addEventListener("click", async () => {
       if (!(await chiediConferma("Eliminare il biglietto?", '"' + b.nome + '"', "Elimina", true))) return;
       await dbElimina("biglietti", b.id);
       renderBiglietti();
     });
-    cont.appendChild(div);
+    cont.appendChild(wrap);
   }
 }
 
@@ -1864,7 +1987,7 @@ $("fileEsperienza").addEventListener("change", async (e) => {
   try {
     const f = e.target.files[0];
     if (!f || !espCorrente) return;
-    const dati = await comprimi(f);
+    const dati = await comprimi(f, "✨ " + espCorrente.testo); // nome impresso nella foto
     const id = Date.now();
     await dbPut("foto", { id, viaggioId: corrente.id, localita: "✨ " + espCorrente.testo, quando: Date.now(), dati, esperienzaId: espCorrente.id });
     espCorrente.fotoId = id;
@@ -1878,7 +2001,11 @@ $("fileEsperienza").addEventListener("change", async (e) => {
 });
 
 // ============ NAVIGAZIONE ============
+let vistaAttuale = "itinerario";
+$("btnGlobo").addEventListener("click", () => mostraVista(vistaAttuale === "mappa" ? "itinerario" : "mappa"));
 function mostraVista(nome) {
+  vistaAttuale = nome;
+  $("btnGlobo").classList.toggle("attivo", nome === "mappa");
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("attiva", x.dataset.vista === nome));
   for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "dafare"]) {
     $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
