@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Agenda Viaggi</title>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,34 +15,49 @@
 
   /* ===== SPLASH ===== */
   #splash { position: fixed; inset: 0; z-index: 200; overflow: hidden; transition: opacity .8s ease;
-    background: radial-gradient(ellipse at 50% 30%, #1c3a6e 0%, #16264C 45%, #05080F 100%); }
+    background: radial-gradient(ellipse at 50% 28%, #14264d 0%, #0a1228 52%, #05080F 100%); }
   #splash.via { opacity: 0; pointer-events: none; }
   #cieloStelle { position: absolute; inset: 0; pointer-events: none; }
   .stella { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff;
-    animation: brilla 3s ease-in-out infinite; }
-  @keyframes brilla { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
-  .scena-globo { position: absolute; top: 36%; left: 50%; transform: translate(-50%, -50%);
-    width: 230px; height: 230px; z-index: 4; pointer-events: none; }
-  .globo-css { width: 100%; height: 100%; filter: drop-shadow(0 0 46px rgba(61,90,128,.6));
-    animation: fluttua 6s ease-in-out infinite; }
-  @keyframes fluttua { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-  .splash-testi { position: absolute; left: 0; right: 0; bottom: 52px; text-align: center; color: #fff; z-index: 6; padding: 0 24px; }
-  .splash-testi .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .65; }
-  .splash-testi h1 { font-size: 36px; margin-top: 6px; text-shadow: 0 2px 18px rgba(0,0,0,.6); }
-  .splash-testi p { opacity: .8; font-size: 14px; margin-top: 6px; }
-  .splash-prossimo { display: inline-block; margin-top: 14px; background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.22); border-radius: 999px; padding: 9px 18px;
-    font-size: 14px; font-weight: 600; }
-  .btn-inizia { display: block; margin: 18px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
-    padding: 15px 34px; font-weight: 700; font-size: 16px; box-shadow: 0 8px 26px rgba(228,87,46,.45); }
-  .orbita { position: absolute; top: 36%; left: 50%; border: 1px dashed rgba(255,255,255,.16);
-    border-radius: 50%; pointer-events: none; z-index: 5; }
-  .orbita .aereo-orb { position: absolute; top: 0; left: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
-  .orbita .aereo-orb svg { width: 100%; height: 100%; fill: #fff; transform: rotate(90deg); }
-  @keyframes giraOrario { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-  @keyframes giraAntiorario { from { transform: translate(-50%, -50%) rotate(360deg); } to { transform: translate(-50%, -50%) rotate(0deg); } }
-  @media (prefers-reduced-motion: reduce) { .orbita, .globo-css, .stella { animation: none !important; } }
+    opacity: .15; animation: brilla 3s ease-in-out infinite; }
+  @keyframes brilla { 50% { opacity: .85; } }
+  .scena-globo { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+    width: min(78vw, 330px); height: min(78vw, 330px); }
+  .globo-css { width: 100%; height: 100%; filter: drop-shadow(0 0 52px rgba(94,141,210,.55)); }
+  .deriva { animation: deriva 38s linear infinite; }
+  @keyframes deriva { to { transform: translateX(-220px); } }
+  .rotte-cielo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 175%; height: 175%; overflow: visible; pointer-events: none; }
+  .splash-testi { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
+  .splash-testi .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .6; }
+  #flipNome { font-family: 'Caveat', cursive; font-size: 34px; margin-top: 4px; color: #fff;
+    text-shadow: 0 2px 16px rgba(0,0,0,.6); min-height: 40px; }
+  .fc { display: flex; gap: 9px; justify-content: center; margin-top: 12px; perspective: 500px; }
+  .fc-unita { text-align: center; }
+  .fc-card { position: relative; background: linear-gradient(#2c2c31 48%, #18181b 52%); border-radius: 12px;
+    min-width: 62px; padding: 9px 4px; font-size: 42px; font-weight: 800; color: #f5f5f4;
+    font-variant-numeric: tabular-nums; box-shadow: 0 8px 20px rgba(0,0,0,.55), inset 0 1px 0 #ffffff14;
+    transform-style: preserve-3d; }
+  .fc-card::after { content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; background: #000c; }
+  .fc-card.gira { animation: ribalta .45s ease; }
+  @keyframes ribalta { 0% { transform: rotateX(0); } 45% { transform: rotateX(-86deg); } 100% { transform: rotateX(0); } }
+  .fc-eti { margin-top: 6px; font-size: 9px; letter-spacing: 2.5px; color: #C9A227; text-transform: uppercase; font-weight: 700; }
+  .fc-incorso { margin-top: 14px; font-size: 30px; font-weight: 800; color: #fff; }
+  .fc-incorso small { display: block; font-size: 13px; font-weight: 400; color: #C9A227; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .btn-inizia { display: block; margin: 20px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
+    padding: 15px 44px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.4); }
+  #decollo { position: fixed; inset: 0; z-index: 300; pointer-events: none; visibility: hidden; }
+  #decollo.vai { visibility: visible; }
+  #decollo .cielo-decollo { position: absolute; inset: 0; opacity: 0;
+    background: linear-gradient(#05080F 0%, #1c3a6e 55%, #4a7ec2 100%); }
+  #decollo.vai .cielo-decollo { animation: apparireCielo .5s ease forwards; }
+  @keyframes apparireCielo { to { opacity: 1; } }
+  #decollo .muso { position: absolute; left: 50%; bottom: 0; width: 150vw; max-width: 900px;
+    transform: translate(-50%, 112%); filter: drop-shadow(0 -10px 40px rgba(0,0,0,.5)); }
+  #decollo.vai .muso { animation: decolla 1.5s cubic-bezier(.5, 0, .15, 1) forwards; }
+  @keyframes decolla { 35% { transform: translate(-50%, 30%) scale(1.04); } 100% { transform: translate(-50%, -135%) scale(1.15); } }
+  #decollo.via { transition: opacity .45s ease; opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .deriva, .stella, .fc-card.gira { animation: none !important; } }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
   .bottone-file { display: flex; align-items: center; justify-content: center; flex: 1;
@@ -49,12 +66,36 @@
   .file-nascosto { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 
   /* Cose da fare */
-  .dafare-item { display: flex; align-items: center; gap: 10px; background: #fff;
-    border: 1px solid #e7e5e4; border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; }
-  .dafare-item .testo { flex: 1; font-size: 15px; color: #1c1917; }
-  .dafare-item.fatto .testo { text-decoration: line-through; color: #a8a29e; }
-  .dafare-item button { background: none; border: none; font-size: 19px; padding: 2px; }
-  .dafare-item .x { color: #d6d3d1; font-size: 15px; }
+  #vistaDafare { padding: 0; }
+  #quaderno { min-height: calc(100vh - 150px); background: #f8f2dd;
+    background-image: repeating-linear-gradient(transparent 0 33px, #c9b88a4d 33px 34px);
+    padding: 20px 14px 110px 44px; position: relative;
+    font-family: 'Caveat', 'Bradley Hand', 'Segoe Script', cursive; }
+  #quaderno::before { content: ''; position: absolute; top: 0; bottom: 0; left: 30px; width: 2px; background: #d9777759; }
+  .q-titolo { font-size: 31px; color: #2b3a55; font-weight: 700; line-height: 34px; }
+  .q-sotto { font-size: 19px; color: #8a7b54; line-height: 34px; min-height: 34px; }
+  .q-inserisci { display: flex; gap: 8px; align-items: center; height: 34px; }
+  .q-inserisci input { flex: 1; background: transparent; border: none; border-bottom: 2px dashed #b8a570;
+    border-radius: 0; font-family: inherit; font-size: 22px; color: #2b3a55; padding: 2px; }
+  .q-inserisci input::placeholder { color: #b8a570; }
+  .q-inserisci button { background: #2b3a55; color: #f8f2dd; border: none; border-radius: 10px;
+    font-size: 19px; width: 44px; height: 34px; flex: none; }
+  .imp-riga { display: flex; align-items: center; gap: 9px; line-height: 34px; min-height: 34px; font-size: 22px; color: #2b3a55; }
+  .imp-riga .spunta { background: none; border: 2px solid #2b3a55; border-radius: 5px; width: 22px; height: 22px;
+    font-size: 14px; line-height: 1; color: #2b3a55; padding: 0; flex: none; }
+  .imp-riga .testo { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .imp-riga.vissuta .spunta { background: #2b3a55; color: #f8f2dd; }
+  .imp-riga.vissuta .testo { text-decoration: line-through; text-decoration-color: #d97777; text-decoration-thickness: 2px; color: #8d8d7b; }
+  .imp-riga .mini { font-size: 17px; color: #b07d10; flex: none; }
+  .imp-riga .x { background: none; border: none; color: #c9b88a; font-size: 19px; padding: 0 2px; flex: none; }
+  #dfIdee { background: none; border: none; font-family: inherit; font-size: 20px; color: #8a7b54;
+    margin-top: 18px; text-decoration: underline dashed; }
+  .stelle-box { text-align: center; margin: 10px 0 2px; }
+  .stelle-sfondo { position: relative; display: inline-block; font-size: 40px; letter-spacing: 5px;
+    color: #d6d3d1; cursor: pointer; user-select: none; -webkit-user-select: none; line-height: 1.1; }
+  .stelle-oro { position: absolute; inset: 0; width: 0; overflow: hidden; white-space: nowrap; color: #E9B824; pointer-events: none; }
+  #espVotoTxt { text-align: center; color: #78716c; font-size: 14px; margin-bottom: 6px; min-height: 18px; }
+  #espFoto { width: 100%; border-radius: 12px; margin: 8px 0; display: block; }
 
   header { background: linear-gradient(135deg, #16264C, #2C3E6B); color: #fff; padding: 26px 20px 18px; border-radius: 0 0 24px 24px; }
   .eyebrow { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: .7; }
@@ -203,39 +244,84 @@
 <div id="splash">
   <div id="cieloStelle"></div>
   <div class="scena-globo">
-    <svg class="globo-css" viewBox="0 0 200 200">
+    <svg class="globo-css" viewBox="0 0 220 220">
       <defs>
-        <radialGradient id="gOceano" cx="35%" cy="30%" r="90%">
-          <stop offset="0%" stop-color="#3D5A80"/><stop offset="100%" stop-color="#16264C"/>
+        <radialGradient id="gOceano" cx="35%" cy="30%" r="95%">
+          <stop offset="0%" stop-color="#46689c"/><stop offset="55%" stop-color="#27406e"/><stop offset="100%" stop-color="#101d3d"/>
         </radialGradient>
+        <radialGradient id="gAtmo" cx="50%" cy="50%" r="50%">
+          <stop offset="78%" stop-color="#7FA3D8" stop-opacity="0"/><stop offset="100%" stop-color="#9cc3ff" stop-opacity=".5"/>
+        </radialGradient>
+        <clipPath id="clipGlobo"><circle cx="110" cy="110" r="100"/></clipPath>
       </defs>
-      <circle cx="100" cy="100" r="96" fill="url(#gOceano)" stroke="#7FA3D8" stroke-width="1.5"/>
-      <g fill="#2A9D8F" opacity=".88">
-        <path d="M55 60 q15 -18 38 -12 q12 4 10 16 q-3 14 -20 16 q-20 3 -28 -8 q-4 -7 0 -12z"/>
-        <path d="M120 95 q22 -6 32 8 q8 12 -2 22 q-12 11 -28 4 q-12 -6 -10 -18 q2 -12 8 -16z"/>
-        <path d="M60 120 q12 -4 18 6 q5 10 -4 18 q-10 8 -20 2 q-8 -6 -4 -16 q3 -8 10 -10z"/>
+      <circle cx="110" cy="110" r="100" fill="url(#gOceano)"/>
+      <g clip-path="url(#clipGlobo)">
+        <g class="deriva" fill="#2A9D8F">
+          <g opacity=".9">
+            <path d="M30 70 q18 -22 46 -14 q16 5 12 20 q-4 16 -24 18 q-24 4 -34 -10 q-5 -8 0 -14z"/>
+            <path d="M118 104 q26 -8 38 9 q10 14 -2 26 q-14 13 -33 5 q-14 -7 -12 -21 q2 -14 9 -19z"/>
+            <path d="M52 134 q14 -5 21 7 q6 12 -5 21 q-12 9 -23 2 q-9 -7 -5 -19 q4 -9 12 -11z"/>
+            <path d="M150 48 q14 -8 24 0 q9 8 2 18 q-8 10 -20 6 q-11 -4 -10 -13 q1 -8 4 -11z"/>
+          </g>
+          <g opacity=".9" transform="translate(220,0)">
+            <path d="M30 70 q18 -22 46 -14 q16 5 12 20 q-4 16 -24 18 q-24 4 -34 -10 q-5 -8 0 -14z"/>
+            <path d="M118 104 q26 -8 38 9 q10 14 -2 26 q-14 13 -33 5 q-14 -7 -12 -21 q2 -14 9 -19z"/>
+            <path d="M52 134 q14 -5 21 7 q6 12 -5 21 q-12 9 -23 2 q-9 -7 -5 -19 q4 -9 12 -11z"/>
+            <path d="M150 48 q14 -8 24 0 q9 8 2 18 q-8 10 -20 6 q-11 -4 -10 -13 q1 -8 4 -11z"/>
+          </g>
+        </g>
+        <ellipse cx="110" cy="30" rx="150" ry="26" fill="#ffffff" opacity=".08"/>
       </g>
-      <g fill="none" stroke="#ffffff2e" stroke-width="1">
-        <ellipse cx="100" cy="100" rx="96" ry="38"/>
-        <ellipse cx="100" cy="100" rx="96" ry="72"/>
-        <ellipse cx="100" cy="100" rx="38" ry="96"/>
-        <ellipse cx="100" cy="100" rx="72" ry="96"/>
+      <circle cx="110" cy="110" r="100" fill="url(#gAtmo)"/>
+      <circle cx="110" cy="110" r="100" fill="none" stroke="#9cc3ff55" stroke-width="1.2"/>
+    </svg>
+    <svg class="rotte-cielo" viewBox="0 0 500 500">
+      <defs>
+        <path id="rottaCielo1" d="M 250 95 A 175 75 18 1 1 249.9 95.01" fill="none"/>
+        <path id="rottaCielo2" d="M 250 130 A 145 105 -25 1 0 250.1 129.99" fill="none"/>
+      </defs>
+      <use href="#rottaCielo1" stroke="#ffffff22" stroke-width="1.4" stroke-dasharray="3 7"/>
+      <use href="#rottaCielo2" stroke="#ffffff1c" stroke-width="1.2" stroke-dasharray="3 7"/>
+      <g fill="#fff">
+        <path d="M14 0 L3 4 L-8 1.4 L-11 2.6 L-4 5.4 L-9 7 L-13 6 L-15 7 L-9 10 L3 8 L14 3 Q17 1.5 14 0z" opacity=".95">
+          <animateMotion dur="16s" repeatCount="indefinite" rotate="auto"><mpath href="#rottaCielo1"/></animateMotion>
+        </path>
+        <path d="M11 0 L2.4 3.2 L-6.4 1.1 L-8.8 2.1 L-3.2 4.3 L-7.2 5.6 L-10.4 4.8 L-12 5.6 L-7.2 8 L2.4 6.4 L11 2.4 Q13.6 1.2 11 0z" opacity=".75">
+          <animateMotion dur="23s" repeatCount="indefinite" rotate="auto"><mpath href="#rottaCielo2"/></animateMotion>
+        </path>
       </g>
     </svg>
   </div>
-  <div class="orbita" style="width:300px;height:300px;animation:giraOrario 15s linear infinite;">
-    <div class="aereo-orb"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
-  </div>
-  <div class="orbita" style="width:400px;height:400px;animation:giraAntiorario 23s linear infinite;">
-    <div class="aereo-orb" style="width:26px;height:26px;margin:-13px 0 0 -13px;"><svg viewBox="0 0 24 24" style="transform:rotate(-90deg)"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
-  </div>
   <div class="splash-testi">
-    <div class="eyebrow">La tua agenda di viaggio</div>
-    <h1>Il mondo ti aspetta 🌍</h1>
-    <p>Itinerari, budget, mappe, foto e biglietti.</p>
-    <div class="splash-prossimo" id="splashProssimo"></div>
-    <button class="btn-inizia" id="btnInizia">Inizia il viaggio →</button>
+    <div class="eyebrow">Diario di bordo</div>
+    <div id="flipNome"></div>
+    <div class="fc" id="fcOrologio">
+      <div class="fc-unita"><div class="fc-card" id="cardG">00</div><div class="fc-eti">Giorni</div></div>
+      <div class="fc-unita"><div class="fc-card" id="cardO">00</div><div class="fc-eti">Ore</div></div>
+      <div class="fc-unita"><div class="fc-card" id="cardM">00</div><div class="fc-eti">Minuti</div></div>
+      <div class="fc-unita"><div class="fc-card" id="cardS">00</div><div class="fc-eti">Secondi</div></div>
+    </div>
+    <div class="fc-incorso nascosto" id="fcInCorso"></div>
+    <button class="btn-inizia" id="btnInizia">Inizia il viaggio</button>
   </div>
+</div>
+<div id="decollo">
+  <div class="cielo-decollo"></div>
+  <svg class="muso" viewBox="0 0 400 300">
+    <defs>
+      <linearGradient id="gFus" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#cfd4dc"/><stop offset="100%" stop-color="#9aa3b2"/>
+      </linearGradient>
+    </defs>
+    <rect x="-40" y="208" width="180" height="26" rx="13" fill="#b9c0cc" transform="rotate(8 50 220)"/>
+    <rect x="260" y="208" width="180" height="26" rx="13" fill="#b9c0cc" transform="rotate(-8 350 220)"/>
+    <ellipse cx="88" cy="252" rx="26" ry="18" fill="#5c6675"/>
+    <ellipse cx="312" cy="252" rx="26" ry="18" fill="#5c6675"/>
+    <path d="M200 28 Q300 38 312 180 L312 300 L88 300 L88 180 Q100 38 200 28z" fill="url(#gFus)"/>
+    <path d="M200 64 Q252 70 262 118 L240 132 Q222 108 200 108 Q178 108 160 132 L138 118 Q148 70 200 64z" fill="#1c2733"/>
+    <path d="M200 64 Q252 70 262 118 L254 123 Q230 92 200 92 Q170 92 146 123 L138 118 Q148 70 200 64z" fill="#3d4f63"/>
+    <ellipse cx="200" cy="186" rx="64" ry="10" fill="#ffffff66"/>
+  </svg>
 </div>
 
 <!-- ===== HOME ===== -->
@@ -261,7 +347,7 @@
   </header>
   <div class="tabs">
     <button class="tab attiva" data-vista="itinerario">🗓️ Itinerario</button>
-    <button class="tab" data-vista="dafare">✅ Da fare</button>
+    <button class="tab" data-vista="dafare">✨ Imperdibili</button>
     <button class="tab" data-vista="budget">💰 Budget</button>
     <button class="tab" data-vista="mappa">🗺️ Mappa</button>
     <button class="tab" data-vista="foto">📷 Foto</button>
@@ -303,22 +389,16 @@
     <div id="listaBiglietti"></div>
   </main>
   <main id="vistaDafare" class="nascosto">
-    <div class="card">
-      <label>Cosa non vuoi perderti in questo viaggio?</label>
-      <input id="dfTesto" placeholder="Es. Mangiare ramen da Ichiran" />
-      <div class="chips" id="dfChips"></div>
-      <div class="azioni">
-        <button id="dfIdee">💡 Idee</button>
-        <button class="salva" id="dfAggiungi">Aggiungi</button>
+    <div id="quaderno">
+      <div class="q-titolo">Le mie imperdibili ✨</div>
+      <div class="q-sotto" id="impContatore">Le cose per cui vale il viaggio</div>
+      <div class="q-inserisci">
+        <input id="dfTesto" placeholder="Scrivi cosa non vuoi perderti..." enterkeyhint="done" />
+        <button id="dfAggiungi" title="Aggiungi">✎</button>
       </div>
+      <div id="dfLista"></div>
+      <button id="dfIdee">💡 Suggeriscimi qualche idea</button>
     </div>
-    <div class="card nascosto" id="dfProgressoCard">
-      <b id="dfContatore" style="display:block;margin-bottom:8px;color:#1c1917"></b>
-      <div class="pista" style="height:8px;background:#f5f5f4;border-radius:999px;overflow:hidden">
-        <div id="dfBarra" style="height:100%;border-radius:999px;background:#2A9D8F;width:0%"></div>
-      </div>
-    </div>
-    <div id="dfLista"></div>
   </main>
 </div>
 
@@ -408,6 +488,22 @@
     </div>
   </div>
 </div>
+<div class="velo" id="veloEsperienza">
+  <div class="modale">
+    <h3 id="espTitolo"></h3>
+    <p style="text-align:center;color:#78716c;font-size:14px;margin:4px 0 0">Com'è stata questa esperienza?</p>
+    <div class="stelle-box">
+      <div class="stelle-sfondo" id="espStelle">★★★★★<div class="stelle-oro" id="espOro">★★★★★</div></div>
+    </div>
+    <div id="espVotoTxt"></div>
+    <img id="espFoto" class="nascosto" alt="" />
+    <div class="azioni">
+      <button id="espChiudi">Chiudi</button>
+      <label class="bottone-file" for="fileEsperienza">📷 Foto ricordo</label>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileEsperienza" accept="image/*" class="file-nascosto" />
 <input type="file" id="fileFoto" accept="image/*" multiple class="file-nascosto" />
 
 <!-- ===== MODALE BIGLIETTO ===== -->
@@ -1238,74 +1334,116 @@ async function renderBiglietti() {
   }
 }
 
-// ============ COSE DA FARE ============
-const CAT_DF = {
-  visitare:   ["🏛️", "Visitare"],
-  mangiare:   ["🍝", "Mangiare"],
-  foto:       ["📸", "Foto da fare"],
-  esperienza: ["🎯", "Esperienza"],
-};
-let catDf = "visitare";
-function renderChipsDf() {
-  $("dfChips").innerHTML = "";
-  for (const [k, [ico, label]] of Object.entries(CAT_DF)) {
-    const c = document.createElement("button");
-    c.className = "chip" + (k === catDf ? " scelto" : "");
-    if (k === catDf) { c.style.background = "#2A9D8F"; c.style.borderColor = "#2A9D8F"; }
-    c.textContent = ico + " " + label;
-    c.addEventListener("click", () => { catDf = k; renderChipsDf(); });
-    $("dfChips").appendChild(c);
-  }
-}
+// ============ IMPERDIBILI (quaderno) ============
+let espCorrente = null;
 function renderDafare() {
   corrente.daFare = corrente.daFare || [];
-  renderChipsDf();
   const lista = $("dfLista"); lista.innerHTML = "";
   const tot = corrente.daFare.length;
   const fatte = corrente.daFare.filter((x) => x.fatto).length;
-  $("dfProgressoCard").classList.toggle("nascosto", tot === 0);
-  if (tot) {
-    $("dfContatore").textContent = `${fatte} su ${tot} fatte ${fatte === tot ? "🎉 Tutto fatto!" : ""}`;
-    $("dfBarra").style.width = (fatte / tot * 100) + "%";
-  } else {
-    lista.innerHTML = '<div class="vuoto" style="text-align:center;padding:14px">Nessuna idea ancora.<br>Aggiungi le cose da non perderti, o tocca 💡 Idee!</div>';
-  }
-  // Prima quelle da fare, poi quelle completate
+  $("impContatore").textContent = tot
+    ? `Vissute ${fatte} di ${tot}${fatte === tot ? " — tutte! 🎉" : ""}`
+    : "Le cose per cui vale il viaggio";
   const ordinate = [...corrente.daFare].sort((a, b) => (a.fatto === b.fatto ? 0 : a.fatto ? 1 : -1));
   for (const x of ordinate) {
-    const ico = (CAT_DF[x.cat] || ["🎯"])[0];
     const div = document.createElement("div");
-    div.className = "dafare-item" + (x.fatto ? " fatto" : "");
-    div.innerHTML = `<button class="spunta">${x.fatto ? "✅" : "⬜️"}</button><div class="testo">${ico} ${x.testo}</div><button class="x">✕</button>`;
-    div.querySelector(".spunta").addEventListener("click", () => { x.fatto = !x.fatto; salva(); renderDafare(); });
-    div.querySelector(".x").addEventListener("click", () => {
+    div.className = "imp-riga" + (x.fatto ? " vissuta" : "");
+    const stelle = x.fatto && x.voto ? `<span class="mini">★ ${String(x.voto).replace(".", ",")}</span>` : "";
+    const foto = x.fatto && x.fotoId ? `<span class="mini">📷</span>` : "";
+    div.innerHTML = `<button class="spunta">${x.fatto ? "✓" : ""}</button><div class="testo">${x.testo}</div>${stelle}${foto}<button class="x">×</button>`;
+    div.querySelector(".spunta").addEventListener("click", (e) => {
+      e.stopPropagation();
+      x.fatto = !x.fatto; salva(); renderDafare();
+      if (x.fatto) apriEsperienza(x); // appena vissuta: foto ricordo + voto
+    });
+    div.querySelector(".x").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!confirm(`Cancello "${x.testo}" dal quaderno?`)) return;
       corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
       salva(); renderDafare();
     });
+    div.addEventListener("click", () => { if (x.fatto) apriEsperienza(x); });
     lista.appendChild(div);
   }
 }
-$("dfAggiungi").addEventListener("click", () => {
+function aggiungiImperdibile() {
   const testo = $("dfTesto").value.trim();
   if (!testo) return;
   corrente.daFare = corrente.daFare || [];
-  corrente.daFare.push({ id: Date.now(), testo, cat: catDf, fatto: false });
+  corrente.daFare.push({ id: Date.now(), testo, fatto: false, voto: 0, fotoId: null });
   $("dfTesto").value = "";
   salva(); renderDafare();
+}
+$("dfAggiungi").addEventListener("click", aggiungiImperdibile);
+$("dfTesto").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); aggiungiImperdibile(); } // a prova di tastiera iOS
 });
 $("dfIdee").addEventListener("click", () => {
   const idee = [
-    ["Assaggia il piatto tipico del posto", "mangiare"],
-    ["Visita il monumento più famoso", "visitare"],
-    ["Foto al tramonto in un punto panoramico", "foto"],
-    ["Compra un souvenir in un mercato locale", "esperienza"],
-    ["Prova un locale consigliato dalla gente del posto", "mangiare"],
-    ["Perditi senza mappa per un'ora", "esperienza"],
+    "Assaggia il piatto tipico del posto",
+    "Visita il monumento più famoso",
+    "Foto al tramonto in un punto panoramico",
+    "Compra un souvenir in un mercato locale",
+    "Prova un locale consigliato dalla gente del posto",
+    "Perditi senza mappa per un'ora",
   ];
   corrente.daFare = corrente.daFare || [];
-  for (const [testo, cat] of idee)
-    corrente.daFare.push({ id: Date.now() + Math.random(), testo, cat, fatto: false });
+  for (const testo of idee)
+    corrente.daFare.push({ id: Date.now() + Math.random(), testo, fatto: false, voto: 0, fotoId: null });
   salva(); renderDafare();
+});
+
+// ===== Rituale dell'esperienza vissuta: voto a stelle (mezze comprese) + foto ricordo =====
+function disegnaStelle() {
+  if (!espCorrente) return;
+  $("espOro").style.width = (espCorrente.voto / 5 * 100) + "%";
+  $("espVotoTxt").textContent = espCorrente.voto
+    ? `${String(espCorrente.voto).replace(".", ",")} su 5`
+    : "Tocca le stelle per dare un voto";
+}
+async function apriEsperienza(x) {
+  espCorrente = x;
+  $("espTitolo").textContent = "✨ " + x.testo;
+  disegnaStelle();
+  const img = $("espFoto");
+  img.classList.add("nascosto"); img.src = "";
+  if (x.fotoId) {
+    try {
+      const tutte = await dbTutti("foto");
+      const f = tutte.find((y) => y.id === x.fotoId);
+      if (f) { img.src = srcFoto(f); img.classList.remove("nascosto"); }
+    } catch {}
+  }
+  $("veloEsperienza").classList.add("aperto");
+}
+$("espStelle").addEventListener("click", (e) => {
+  if (!espCorrente) return;
+  const r = $("espStelle").getBoundingClientRect();
+  let v = (e.clientX - r.left) / r.width * 5;
+  v = Math.max(0.5, Math.min(5, Math.round(v * 2) / 2)); // scatti da mezza stella
+  espCorrente.voto = v;
+  salva(); disegnaStelle();
+});
+$("espChiudi").addEventListener("click", () => {
+  $("veloEsperienza").classList.remove("aperto");
+  espCorrente = null;
+  renderDafare();
+});
+$("fileEsperienza").addEventListener("change", async (e) => {
+  try {
+    const f = e.target.files[0];
+    if (!f || !espCorrente) return;
+    const dati = await comprimi(f);
+    const id = Date.now();
+    await dbPut("foto", { id, viaggioId: corrente.id, localita: "✨ " + espCorrente.testo, quando: Date.now(), dati, esperienzaId: espCorrente.id });
+    espCorrente.fotoId = id;
+    salva();
+    $("espFoto").src = dati; $("espFoto").classList.remove("nascosto");
+    e.target.value = "";
+    renderFoto();
+  } catch (err) {
+    alert("Non sono riuscito a salvare la foto: " + (err && err.message ? err.message : err));
+  }
 });
 
 // ============ NAVIGAZIONE ============
@@ -1326,33 +1464,65 @@ document.querySelectorAll(".velo").forEach((v) =>
   v.addEventListener("click", (e) => { if (e.target === v) v.classList.remove("aperto"); }));
 
 // ============ SPLASH ============
+let fcTimer = null;
 function avviaSplash() {
-  // Cielo stellato
   const cielo = $("cieloStelle");
-  for (let i = 0; i < 60; i++) {
-    const s = document.createElement("span");
-    s.className = "stella";
-    s.style.left = Math.random() * 100 + "%";
-    s.style.top = Math.random() * 100 + "%";
-    s.style.animationDelay = (Math.random() * 3).toFixed(2) + "s";
-    cielo.appendChild(s);
+  for (let i = 0; i < 70; i++) {
+    const st = document.createElement("span");
+    st.className = "stella";
+    st.style.left = Math.random() * 100 + "%";
+    st.style.top = Math.random() * 100 + "%";
+    st.style.animationDelay = (Math.random() * 3).toFixed(2) + "s";
+    cielo.appendChild(st);
   }
-  // Informazione utile: il prossimo viaggio in programma
-  const el = $("splashProssimo");
+  aggiornaCountdown();
+  fcTimer = setInterval(aggiornaCountdown, 1000);
+}
+function setCifra(idCard, val) {
+  const card = $(idCard);
+  const v = String(Math.max(0, val)).padStart(2, "0");
+  if (card.textContent !== v) {
+    card.textContent = v;
+    card.classList.remove("gira");
+    void card.offsetWidth; // riavvia l'animazione di ribaltamento
+    card.classList.add("gira");
+  }
+}
+function aggiornaCountdown() {
   const oggi = oggiISO();
   const inCorso = viaggi.find((v) => oggi >= v.inizio && oggi <= v.fine);
   const futuri = viaggi.filter((v) => v.inizio > oggi).sort((a, b) => (a.inizio < b.inizio ? -1 : 1));
-  if (inCorso) el.textContent = `✈️ "${inCorso.nome}" è in corso — buon viaggio!`;
-  else if (futuri.length) {
-    const diff = Math.round((new Date(futuri[0].inizio) - new Date(oggi)) / 86400000);
-    el.textContent = diff === 1
-      ? `🕐 Si parte domani: "${futuri[0].nome}"!`
-      : `🕐 Mancano ${diff} giorni a "${futuri[0].nome}"`;
-  } else el.textContent = "🌍 Crea il tuo primo viaggio!";
+  const oro = $("fcOrologio"), ic = $("fcInCorso"), nome = $("flipNome");
+  if (inCorso) {
+    // Viaggio in corso: niente countdown, mostro "Giorno X/Y"
+    const giorno = Math.floor((new Date(oggi) - new Date(inCorso.inizio)) / 86400000) + 1;
+    const totale = Math.floor((new Date(inCorso.fine) - new Date(inCorso.inizio)) / 86400000) + 1;
+    nome.textContent = inCorso.nome;
+    ic.innerHTML = `✈️ Giorno ${giorno}/${totale}<small>Buon viaggio!</small>`;
+    oro.classList.add("nascosto"); ic.classList.remove("nascosto");
+  } else if (futuri.length) {
+    const v = futuri[0];
+    nome.textContent = v.nome;
+    let diff = new Date(v.inizio + "T00:00:00") - new Date();
+    if (diff < 0) diff = 0;
+    setCifra("cardG", Math.floor(diff / 86400000));
+    setCifra("cardO", Math.floor(diff / 3600000) % 24);
+    setCifra("cardM", Math.floor(diff / 60000) % 60);
+    setCifra("cardS", Math.floor(diff / 1000) % 60);
+    oro.classList.remove("nascosto"); ic.classList.add("nascosto");
+  } else {
+    nome.textContent = "Il mondo ti aspetta 🌍";
+    ic.innerHTML = `Crea il tuo primo viaggio<small>Il diario è pronto</small>`;
+    oro.classList.add("nascosto"); ic.classList.remove("nascosto");
+  }
 }
 function chiudiSplash() {
-  $("splash").classList.add("via");
-  setTimeout(() => $("splash").remove(), 850);
+  if (fcTimer) { clearInterval(fcTimer); fcTimer = null; }
+  const d = $("decollo");
+  d.classList.add("vai");                                  // il muso dell'aereo decolla dal basso
+  setTimeout(() => { const sp = $("splash"); if (sp) sp.remove(); }, 760);
+  setTimeout(() => d.classList.add("via"), 1500);          // dissolvenza sull'home
+  setTimeout(() => d.remove(), 2000);
 }
 $("btnInizia").addEventListener("click", chiudiSplash);
 
