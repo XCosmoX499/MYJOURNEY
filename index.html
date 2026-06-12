@@ -121,6 +121,15 @@
     width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
   }
   #barraLuce button.scelto { background: #4264FB22; box-shadow: inset 0 0 0 2px #4264FB; }
+  #barra3d {
+    position: absolute; right: 12px; bottom: 96px; z-index: 5;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #barra3d button {
+    width: 46px; height: 46px; border-radius: 50%; border: none;
+    background: #fff; font-size: 21px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
   #contenitoreMappa { height: calc(100vh - 270px); min-height: 380px; }
   .mappa-avviso { padding: 24px 20px; font-size: 14px; color: #57534e; line-height: 1.55; }
   .mappa-avviso code { background: #e7e5e4; border-radius: 6px; padding: 2px 6px; font-size: 12px; }
@@ -273,6 +282,10 @@
       <button data-luce="day" title="Giorno">☀️</button>
       <button data-luce="dusk" title="Tramonto">🌇</button>
       <button data-luce="night" title="Notte">🌙</button>
+    </div>
+    <div id="barra3d">
+      <button id="btn3d" title="Tuffati nella prossima tappa in 3D">🏙️</button>
+      <button id="btnPanorama" title="Torna alla panoramica">🌍</button>
     </div>
     <button class="btn-viaggio nascosto" id="btnViaggio">▶ Riproduci viaggio</button>
   </main>
@@ -718,6 +731,29 @@ function lucePerOra() {
   return "night";
 }
 
+// ===== Tour 3D: gli edifici 3D di Mapbox Standard compaiono solo a zoom alto (15+) =====
+let puntiMappa = [], indice3d = 0;
+function vola3d() {
+  if (!mappa || !puntiMappa.length) return alert("Aggiungi prima qualche tappa con un luogo!");
+  const punto = puntiMappa[indice3d % puntiMappa.length];
+  indice3d++;
+  mappa.flyTo({
+    center: punto,
+    zoom: 16.3,        // a questo zoom edifici, monumenti e alberi 3D sono ben visibili
+    pitch: 62,         // visuale inclinata, da "drone"
+    bearing: 25,       // leggera rotazione per dare profondità
+    duration: 2600,
+    essential: true,
+  });
+}
+function volaPanoramica() {
+  if (!mappa || !puntiMappa.length) return;
+  const bounds = puntiMappa.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(puntiMappa[0], puntiMappa[0]));
+  mappa.fitBounds(bounds, { padding: 60, maxZoom: 13, pitch: 45, duration: 1800 });
+}
+$("btn3d").addEventListener("click", vola3d);
+$("btnPanorama").addEventListener("click", volaPanoramica);
+
 function aggiornaRotte() {
   if (!mappa || !mappaPronta || !corrente) return;
   const nodi = nodiRotta();
@@ -749,6 +785,10 @@ function renderMappa() {
         basemap: {
           lightPreset: lucePerOra(),
           show3dObjects: true,
+          show3dBuildings: true,
+          show3dTrees: true,
+          show3dLandmarks: true,
+          show3dFacades: true,
           showPointOfInterestLabels: true,
           showLandmarkIcons: true,
           showLandmarkIconLabels: true,
@@ -788,6 +828,7 @@ function renderMappa() {
     const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
     mappa.fitBounds(bounds, { padding: 60, maxZoom: 13 });
   }
+  puntiMappa = punti;
   aggiornaRotte();
 }
 
