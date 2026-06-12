@@ -44,32 +44,7 @@
   .fc-incorso small { display: block; font-size: 13px; font-weight: 400; color: #C9A227; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
   .btn-inizia { display: block; margin: 20px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
     padding: 15px 44px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.4); }
-  #decollo { position: fixed; inset: 0; z-index: 300; pointer-events: none; visibility: hidden; overflow: hidden; }
-  #decollo.vai { visibility: visible; }
-  #decollo .cielo-decollo { position: absolute; inset: 0; opacity: 0;
-    background: linear-gradient(180deg, #0b1838 0%, #27406e 38%, #7a6aa0 68%, #e89a6b 88%, #ffc08a 100%); }
-  #decollo.vai .cielo-decollo { animation: apparireCielo .45s ease forwards; }
-  @keyframes apparireCielo { to { opacity: 1; } }
-  .nube { position: absolute; width: 70vw; height: 18vw; max-width: 420px; max-height: 110px;
-    background: radial-gradient(closest-side, #ffffffee 30%, #ffffff00 100%);
-    border-radius: 50%; filter: blur(6px); opacity: 0; will-change: transform; }
-  .n-dietro { opacity: 0; }
-  .n-davanti { filter: blur(3px); }
-  #decollo.vai .nube { animation-name: nubePassa; animation-timing-function: linear; animation-fill-mode: forwards; }
-  @keyframes nubePassa { 0% { opacity: 0; transform: translate3d(0,0,0) scale(var(--sc,1)); }
-    12% { opacity: .9; } 88% { opacity: .9; }
-    100% { opacity: 0; transform: translate3d(170vw, -14vh, 0) scale(var(--sc,1)); } }
-  .aereo-volo { position: absolute; left: 0; bottom: 0; width: min(86vw, 520px); will-change: transform;
-    transform: translate3d(-110%, 30vh, 0) rotate(-10deg);
-    filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); }
-  #decollo.vai .aereo-volo { animation: attraversa 2s cubic-bezier(.45, .05, .3, .95) forwards; }
-  @keyframes attraversa {
-    0%   { transform: translate3d(-110%, 26vh, 0) rotate(-8deg); }
-    45%  { transform: translate3d(28vw, -34vh, 0) rotate(-14deg); }
-    100% { transform: translate3d(125vw, -86vh, 0) rotate(-16deg); }
-  }
-  #decollo.via { transition: opacity .45s ease; opacity: 0; }
-  @media (prefers-reduced-motion: reduce) { .stella, .fc-card.gira, .nube, .aereo-volo { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .stella, .fc-card.gira { animation: none !important; } }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
   .bottone-file { display: flex; align-items: center; justify-content: center; flex: 1;
@@ -164,6 +139,29 @@
   .fab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1c1917; color: #fff; border: none; border-radius: 999px; padding: 14px 26px; font-size: 15px; font-weight: 700; box-shadow: 0 6px 18px rgba(0,0,0,.25); z-index: 20; }
 
   /* Mappa */
+  .gcard-wrap { position: relative; margin: 10px 0; border-radius: 16px; overflow: hidden; }
+  .gcard-azioni { position: absolute; top: 0; bottom: 0; right: 0; width: 140px; display: flex; }
+  .gcard-azioni button { flex: 1; border: none; font-size: 20px; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .gcard-azioni button small { font-size: 10px; font-weight: 700; }
+  .ga-rinomina { background: #4264FB; }
+  .ga-svuota { background: #dc2626; }
+  .gcard { position: relative; background: #fff; border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06); will-change: transform; z-index: 1; }
+  .gcard-testa { display: flex; align-items: center; justify-content: space-between; padding: 14px; gap: 8px; }
+  .gcard-info b { font-size: 16px; color: #1c1917; display: block; }
+  .gcard-info small { color: #78716c; }
+  .chevron { color: #a8a29e; font-size: 17px; flex: none; }
+  .gcard-corpo { padding: 0 10px 12px; }
+  .aggiungi-qui { width: 100%; margin-top: 10px; background: #fafaf9; border: 1.5px dashed #d6d3d1;
+    border-radius: 12px; padding: 11px; color: #57534e; font-weight: 600; font-size: 14px; }
+  #vNomi input, .v-nome { margin-top: 8px; }
+  .mini-btn { background: #1c1917; color: #fff; border: none; border-radius: 999px;
+    padding: 7px 13px; font-size: 13px; font-weight: 600; }
+  .spesa-riga { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 9px 0; border-bottom: 1px solid #f5f5f4; font-size: 14.5px; color: #1c1917; }
+  .spesa-riga small { color: #78716c; display: block; }
+  .spesa-riga .x { background: none; border: none; color: #d6d3d1; font-size: 17px; }
   #vistaMappa { padding: 0; position: relative; }
   #barraLuce {
     position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -270,58 +268,6 @@
     <button class="btn-inizia" id="btnInizia">Inizia il viaggio</button>
   </div>
 </div>
-<div id="decollo">
-  <div class="cielo-decollo"></div>
-  <div class="nube n-dietro" style="top:22%; left:-46%; --sc:1.25; animation-duration:2.6s;"></div>
-  <div class="nube n-dietro" style="top:58%; left:-66%; --sc:.9; animation-duration:3.1s;"></div>
-  <svg class="aereo-volo" viewBox="0 0 520 200">
-    <defs>
-      <linearGradient id="gFusoliera" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ffffff"/>
-        <stop offset="55%" stop-color="#dfe5ee"/>
-        <stop offset="80%" stop-color="#aeb9c9"/>
-        <stop offset="100%" stop-color="#8b98ab"/>
-      </linearGradient>
-      <linearGradient id="gCoda" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#ff8a5c"/><stop offset="100%" stop-color="#E4572E"/>
-      </linearGradient>
-      <linearGradient id="gAla" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#cdd6e2"/><stop offset="100%" stop-color="#93a1b5"/>
-      </linearGradient>
-    </defs>
-    <!-- deriva di coda -->
-    <path d="M64 96 L96 34 Q102 24 114 28 L132 36 L118 100z" fill="url(#gCoda)"/>
-    <path d="M70 98 L52 70 Q48 62 58 62 L86 64z" fill="#b9c4d4"/>
-    <!-- fusoliera -->
-    <path d="M60 100 Q70 84 130 80 L380 74 Q452 76 492 96 Q500 100 492 106 Q440 128 360 128 L130 124 Q72 120 60 108 Q56 104 60 100z" fill="url(#gFusoliera)"/>
-    <!-- riflesso superiore -->
-    <path d="M120 84 L380 78 Q430 80 462 92 Q420 84 380 84 L130 88 Q120 88 120 84z" fill="#ffffff" opacity=".75"/>
-    <!-- parabrezza -->
-    <path d="M452 88 Q474 92 486 99 L470 102 Q458 102 450 96z" fill="#27384c"/>
-    <!-- finestrini -->
-    <g fill="#3d4f63">
-      <circle cx="170" cy="96" r="4.4"/><circle cx="194" cy="95.6" r="4.4"/><circle cx="218" cy="95.2" r="4.4"/>
-      <circle cx="242" cy="94.8" r="4.4"/><circle cx="266" cy="94.4" r="4.4"/><circle cx="290" cy="94" r="4.4"/>
-      <circle cx="314" cy="93.6" r="4.4"/><circle cx="338" cy="93.2" r="4.4"/><circle cx="362" cy="92.8" r="4.4"/>
-    </g>
-    <!-- ala lontana (dietro, più scura) -->
-    <path d="M260 82 L196 46 Q188 42 196 40 L230 40 L300 78z" fill="#7e8ca0"/>
-    <!-- ala vicina -->
-    <path d="M250 104 L330 158 Q336 164 326 166 L284 164 L208 110z" fill="url(#gAla)"/>
-    <!-- motore -->
-    <g>
-      <ellipse cx="252" cy="128" rx="26" ry="14" fill="#5c6675"/>
-      <ellipse cx="252" cy="128" rx="26" ry="14" fill="url(#gAla)" opacity=".55"/>
-      <ellipse cx="228" cy="128" rx="6" ry="11" fill="#27384c"/>
-    </g>
-    <!-- stabilizzatore di coda -->
-    <path d="M74 104 L34 122 Q26 126 34 130 L70 128 L96 112z" fill="url(#gAla)"/>
-    <!-- luce calda dal basso (tramonto) -->
-    <path d="M60 108 Q72 120 130 124 L360 128 Q440 128 492 106 Q440 122 360 120 L132 118 Q80 114 60 108z" fill="#ffb37a" opacity=".4"/>
-  </svg>
-  <div class="nube n-davanti" style="top:34%; left:-58%; --sc:1.5; animation-duration:2.1s;"></div>
-  <div class="nube n-davanti" style="top:72%; left:-50%; --sc:1.1; animation-duration:2.5s;"></div>
-</div>
 
 <!-- ===== HOME ===== -->
 <div class="app" id="schermataHome">
@@ -415,6 +361,7 @@
     </div>
     <label>Quante persone? (per dividere il budget)</label>
     <input id="vPersone" type="number" inputmode="numeric" min="1" value="1" />
+    <div id="vNomi"></div>
     <div class="azioni">
       <button id="vAnnulla">Annulla</button>
       <button class="salva" id="vSalva">Salva viaggio</button>
@@ -466,10 +413,29 @@
 
     <label>Costo €</label>
     <input id="tCosto" type="number" inputmode="decimal" placeholder="0" />
+    <label id="tPagLabel" class="nascosto">Chi ha pagato? (più nomi = quote uguali)</label>
+    <div class="chips nascosto" id="tPagatori"></div>
     <div class="azioni">
       <button class="pericolo nascosto" id="tElimina">Elimina</button>
       <button id="tAnnulla">Annulla</button>
       <button class="salva" id="tSalva" disabled>Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALE SPESA CONDIVISA ===== -->
+<div class="velo" id="veloSpesa">
+  <div class="modale">
+    <h3>🤝 Spesa condivisa</h3>
+    <label>Descrizione</label>
+    <input id="sNome" placeholder="Es. Benzina, spesa al market, taxi" />
+    <label>Importo €</label>
+    <input id="sImporto" type="number" inputmode="decimal" placeholder="0" />
+    <label>Chi ha pagato? (più nomi = quote uguali)</label>
+    <div class="chips" id="sPagatori"></div>
+    <div class="azioni">
+      <button id="sAnnulla">Annulla</button>
+      <button class="salva" id="sSalva">Salva spesa</button>
     </div>
   </div>
 </div>
@@ -719,6 +685,7 @@ function apriViaggio(id) {
   $("fab").textContent = "+ Aggiungi tappa";
   mostraVista("itinerario");
   renderViaggio();
+  if ((corrente.persone || 1) > 1 && !corrente.nomi) apriModaleViaggio(true); // prima volta: chiedo i nomi
 }
 function renderViaggio() {
   $("nomeViaggio").textContent = corrente.nome;
@@ -728,60 +695,166 @@ function renderViaggio() {
   $("countdown").className = "countdown " + s.classe;
   renderItinerario(); renderBudget(); renderMappa(); renderFoto(); renderBiglietti(); renderDafare();
 }
+let giornoAperto = null;
 function renderItinerario() {
   const m = $("vistaItinerario"); m.innerHTML =
-    '<div class="suggerimento">Tocca una tappa per modificarla · tocca il titolo di un giorno per rinominarlo</div>';
+    '<div class="suggerimento">Tocca un giorno per aprirlo · scorri ⬅️ per rinominare o svuotare</div>';
   for (const g of corrente.giorni) {
-    const sez = document.createElement("section"); sez.className = "giorno";
-    const testa = document.createElement("div"); testa.className = "giorno-testa";
-    testa.innerHTML = `<h2>${g.titolo} <small>✎</small></h2><span>${fmtData(g.data)}</span>`;
-    testa.querySelector("h2").addEventListener("click", () => {
-      const nuovo = prompt("Titolo del giorno:", g.titolo);
-      if (nuovo && nuovo.trim()) { g.titolo = nuovo.trim(); salva(); renderItinerario(); }
-    });
-    sez.appendChild(testa);
-    if (g.tappe.length === 0) {
-      const d = document.createElement("div"); d.className = "vuoto";
-      d.textContent = "Nessuna tappa"; sez.appendChild(d);
-    }
-    let fasciaCorrente = -1;
-    for (const t of ordina(g.tappe)) {
-      const f = fasciaDi(t);
-      if (f !== fasciaCorrente) {
-        fasciaCorrente = f;
-        const et = document.createElement("div"); et.className = "fascia";
-        et.textContent = FASCE[f]; sez.appendChild(et);
-      }
-      const tp = TIPI[t.tipo];
-      const orario = isTrasporto(t.tipo) && t.oraArrivo ? `${t.ora} → ${t.oraArrivo}` : t.ora;
-      const div = document.createElement("div"); div.className = "tappa";
-      div.innerHTML = `
-        <div class="barra" style="background:${tp.colore}"></div>
-        <div class="corpo">
-          <div class="meta">${tp.icona} ${tp.label} · ${orario}</div>
-          <div class="titolo">${t.titolo}</div>
-          <div class="luogo">${t.luogo ? "📍 " + t.luogo : ""}</div>
+    const costoG = g.tappe.reduce((s, t) => s + t.costo, 0);
+    const aperto = giornoAperto === g.id;
+    const wrap = document.createElement("div"); wrap.className = "gcard-wrap";
+    wrap.innerHTML = `
+      <div class="gcard-azioni">
+        <button class="ga-rinomina">✏️<small>Rinomina</small></button>
+        <button class="ga-svuota">🗑<small>Svuota</small></button>
+      </div>
+      <div class="gcard">
+        <div class="gcard-testa">
+          <div class="gcard-info">
+            <b>${g.titolo}</b>
+            <small>${fmtData(g.data)} · ${g.tappe.length ? g.tappe.length + " attività" : "giornata libera"}${costoG ? " · " + eur(costoG) : ""}</small>
+          </div>
+          <span class="chevron">${aperto ? "▾" : "▸"}</span>
         </div>
-        <div class="costo"><b style="color:${t.costo === 0 ? "#2A9D8F" : "#1c1917"}">${eur(t.costo)}</b></div>`;
-      div.addEventListener("click", () => apriModaleTappa({ giorno: g, tappa: t }));
-      sez.appendChild(div);
+        <div class="gcard-corpo ${aperto ? "" : "nascosto"}"></div>
+      </div>`;
+    const card = wrap.querySelector(".gcard");
+
+    // ----- swipe a sinistra per rivelare le azioni -----
+    let x0 = null, y0 = null, dx = 0, rivelata = false, orizzontale = null;
+    card.addEventListener("touchstart", (e) => {
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      dx = 0; orizzontale = null; card.style.transition = "none";
+    }, { passive: true });
+    card.addEventListener("touchmove", (e) => {
+      if (x0 === null) return;
+      dx = e.touches[0].clientX - x0;
+      const dy = e.touches[0].clientY - y0;
+      if (orizzontale === null) orizzontale = Math.abs(dx) > Math.abs(dy) + 4;
+      if (!orizzontale) return; // sta scorrendo la pagina, non la card
+      const base = rivelata ? -140 : 0;
+      card.style.transform = `translateX(${Math.min(0, Math.max(-150, base + dx))}px)`;
+    }, { passive: true });
+    card.addEventListener("touchend", () => {
+      if (x0 === null) return;
+      card.style.transition = "transform .22s ease";
+      const base = rivelata ? -140 : 0;
+      rivelata = orizzontale ? base + dx < -60 : rivelata;
+      card.style.transform = `translateX(${rivelata ? -140 : 0}px)`;
+      x0 = null;
+    });
+
+    // ----- tap: apri/chiudi la giornata -----
+    card.querySelector(".gcard-testa").addEventListener("click", () => {
+      if (rivelata) { rivelata = false; card.style.transform = "translateX(0)"; return; }
+      giornoAperto = aperto ? null : g.id;
+      renderItinerario();
+    });
+    wrap.querySelector(".ga-rinomina").addEventListener("click", () => {
+      const nuovo = prompt("Titolo del giorno:", g.titolo);
+      if (nuovo && nuovo.trim()) { g.titolo = nuovo.trim(); salva(); }
+      renderItinerario();
+    });
+    wrap.querySelector(".ga-svuota").addEventListener("click", () => {
+      if (g.tappe.length === 0 || confirm(`Svuoto "${g.titolo}" (${g.tappe.length} attività)?`)) {
+        g.tappe = []; salva();
+      }
+      renderItinerario();
+    });
+
+    // ----- giornata aperta: fasce orarie, attività, aggiungi -----
+    if (aperto) {
+      const corpo = card.querySelector(".gcard-corpo");
+      let fasciaCorrente = -1;
+      for (const t of ordina(g.tappe)) {
+        const f = fasciaDi(t);
+        if (f !== fasciaCorrente) {
+          fasciaCorrente = f;
+          const et = document.createElement("div"); et.className = "fascia";
+          et.textContent = FASCE[f]; corpo.appendChild(et);
+        }
+        const tp = TIPI[t.tipo];
+        const orario = isTrasporto(t.tipo) && t.oraArrivo ? `${t.ora} → ${t.oraArrivo}` : t.ora;
+        const div = document.createElement("div"); div.className = "tappa";
+        div.innerHTML = `
+          <div class="barra" style="background:${tp.colore}"></div>
+          <div class="corpo">
+            <div class="meta">${tp.icona} ${tp.label} · ${orario}</div>
+            <div class="titolo">${t.titolo}</div>
+            <div class="luogo">${t.luogo ? "📍 " + t.luogo : ""}</div>
+          </div>
+          <div class="costo"><b style="color:${t.costo === 0 ? "#2A9D8F" : "#1c1917"}">${eur(t.costo)}</b></div>`;
+        div.addEventListener("click", () => apriModaleTappa({ giorno: g, tappa: t }));
+        corpo.appendChild(div);
+      }
+      const add = document.createElement("button");
+      add.className = "aggiungi-qui"; add.textContent = "+ Attività in questo giorno";
+      add.addEventListener("click", () => { apriModaleTappa(null); $("tGiorno").value = String(g.id); });
+      corpo.appendChild(add);
     }
-    m.appendChild(sez);
+    m.appendChild(wrap);
   }
 }
+function vociSpesa() {
+  const out = [];
+  for (const g of corrente.giorni) for (const t of g.tappe)
+    if (t.costo > 0) out.push({ costo: t.costo, pagatori: t.pagatori });
+  for (const sp of (corrente.spese || [])) out.push({ costo: sp.costo, pagatori: sp.pagatori });
+  return out;
+}
+let ultimoTotale = 0;
 function renderBudget() {
+  const nomi = nomiViaggio();
+  const voci = vociSpesa();
+  const totale = voci.reduce((s, v) => s + v.costo, 0);
+  ultimoTotale = totale;
+  // ripartizione: ogni voce pesa in quote uguali sui pagatori spuntati (o su tutti se non indicato)
+  const perPersona = nomi.map(() => 0);
+  for (const v of voci) {
+    let chi = (v.pagatori || []).filter((i) => i >= 0 && i < nomi.length);
+    if (!chi.length) chi = nomi.map((_, i) => i);
+    for (const i of chi) perPersona[i] += v.costo / chi.length;
+  }
+  const maxP = Math.max(...perPersona, 1);
   const tappe = corrente.giorni.flatMap((g) => g.tappe);
-  const totale = tappe.reduce((s, t) => s + t.costo, 0);
-  const aTesta = Math.round(totale / (corrente.persone || 1));
   const perTipo = Object.keys(TIPI)
     .map((k) => ({ k, somma: tappe.filter((t) => t.tipo === k).reduce((s, t) => s + t.costo, 0) }))
     .filter((x) => x.somma > 0).sort((a, b) => b.somma - a.somma);
   const max = Math.max(...perTipo.map((x) => x.somma), 1);
+  const spese = corrente.spese || [];
   $("vistaBudget").innerHTML = `
     <div class="card totale">
       <div class="eyebrow" style="color:#78716c">Totale viaggio</div>
       <div class="cifra">${eur(totale)}</div>
-      <div class="sub">≈ ${eur(aTesta)} a testa (${corrente.persone} ${corrente.persone > 1 ? "persone" : "persona"})</div>
+      <div class="sub" id="totValuta"></div>
+    </div>
+    <div class="card"><b>👥 Spese per viaggiatore</b>
+      ${nomi.map((n, i) => `
+        <div class="cat">
+          <div class="riga"><span>${n}</span><b>${eur(Math.round(perPersona[i]))}</b></div>
+          <div class="pista"><div class="pieno" style="width:${(perPersona[i] / maxP) * 100}%;background:#2A9D8F"></div></div>
+        </div>`).join("")}
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <b>🤝 Spese condivise</b>
+        <button class="mini-btn" id="btnSpesa">+ Aggiungi</button>
+      </div>
+      ${spese.length ? spese.map((sp) => `
+        <div class="spesa-riga" data-id="${sp.id}">
+          <div><span>${sp.titolo}</span><small>${(sp.pagatori || []).map((i) => nomi[i]).filter(Boolean).join(", ") || "tutti"}</small></div>
+          <div style="display:flex;align-items:center;gap:6px"><b>${eur(sp.costo)}</b><button class="x">✕</button></div>
+        </div>`).join("") : '<div class="vuoto" style="padding:10px 0">Benzina, market, taxi… le spese fuori itinerario.</div>'}
+    </div>
+    <div class="card">
+      <b>💱 Cambio valuta</b>
+      <label>Valuta della destinazione</label>
+      <select id="cvValuta"></select>
+      <div class="sub" id="cvInfo" style="margin-top:6px"></div>
+      <div class="riga-doppia nascosto" id="cvConv" style="margin-top:8px">
+        <div><label>€ Euro</label><input id="cvEur" type="number" inputmode="decimal" placeholder="0" /></div>
+        <div><label id="cvEtic">Valuta</label><input id="cvVal" type="number" inputmode="decimal" placeholder="0" /></div>
+      </div>
     </div>
     ${perTipo.length ? `<div class="card"><b>Spese per categoria</b>
       ${perTipo.map(({ k, somma }) => `
@@ -789,6 +862,108 @@ function renderBudget() {
           <div class="riga"><span>${TIPI[k].icona} ${TIPI[k].label}</span><b>${eur(somma)}</b></div>
           <div class="pista"><div class="pieno" style="width:${(somma / max) * 100}%;background:${TIPI[k].colore}"></div></div>
         </div>`).join("")}</div>` : ""}`;
+  $("btnSpesa").addEventListener("click", apriModaleSpesa);
+  document.querySelectorAll(".spesa-riga .x").forEach((b) =>
+    b.addEventListener("click", (e) => {
+      const id = Number(e.target.closest(".spesa-riga").dataset.id);
+      const sp = spese.find((x) => x.id === id);
+      if (!confirm(`Elimino "${sp.titolo}" (${eur(sp.costo)})?`)) return;
+      corrente.spese = spese.filter((x) => x.id !== id);
+      salva(); renderBudget();
+    }));
+  setupValuta();
+}
+
+// ============ SPESA CONDIVISA ============
+function apriModaleSpesa() {
+  $("sNome").value = ""; $("sImporto").value = "";
+  sPag = nomiViaggio().map((_, i) => i);
+  chipsPagatori("sPagatori", sPag);
+  $("veloSpesa").classList.add("aperto");
+}
+$("sAnnulla").addEventListener("click", () => $("veloSpesa").classList.remove("aperto"));
+$("sSalva").addEventListener("click", () => {
+  const titolo = $("sNome").value.trim();
+  const costo = Number($("sImporto").value) || 0;
+  if (!titolo) return alert("Descrivi la spesa!");
+  if (costo <= 0) return alert("Inserisci l'importo.");
+  corrente.spese = corrente.spese || [];
+  corrente.spese.push({ id: Date.now(), titolo, costo, pagatori: sPag.slice() });
+  salva();
+  $("veloSpesa").classList.remove("aperto");
+  renderBudget();
+});
+
+// ============ CAMBIO VALUTA (consultazione, tassi BCE via Frankfurter) ============
+const VALUTE = {
+  JPY: ["¥", "Yen giapponese"], USD: ["$", "Dollaro USA"], GBP: ["£", "Sterlina britannica"],
+  CHF: ["Fr.", "Franco svizzero"], THB: ["฿", "Baht thailandese"], AUD: ["A$", "Dollaro australiano"],
+  CAD: ["C$", "Dollaro canadese"], MXN: ["MX$", "Peso messicano"], TRY: ["₺", "Lira turca"],
+  CZK: ["Kč", "Corona ceca"], HUF: ["Ft", "Fiorino ungherese"], DKK: ["kr", "Corona danese"],
+  NOK: ["kr", "Corona norvegese"], SEK: ["kr", "Corona svedese"], PLN: ["zł", "Złoty polacco"],
+  CNY: ["¥", "Yuan cinese"], KRW: ["₩", "Won coreano"], INR: ["₹", "Rupia indiana"],
+  BRL: ["R$", "Real brasiliano"], SGD: ["S$", "Dollaro di Singapore"], NZD: ["NZ$", "Dollaro neozelandese"],
+};
+let tassoAttuale = null;
+function fmtValuta(x) {
+  const c = VALUTE[corrente && corrente.valuta];
+  return (c ? c[0] + " " : "") + Math.round(x).toLocaleString("it-IT");
+}
+function setupValuta() {
+  const sel = $("cvValuta");
+  sel.innerHTML = '<option value="">€ Euro — nessun cambio</option>' +
+    Object.entries(VALUTE).map(([k, [sim, nome]]) =>
+      `<option value="${k}" ${corrente.valuta === k ? "selected" : ""}>${sim} ${nome} (${k})</option>`).join("");
+  sel.addEventListener("change", () => {
+    corrente.valuta = sel.value || null; tassoAttuale = null;
+    salva(); renderBudget();
+  });
+  if (!corrente.valuta) { $("cvInfo").textContent = "Scegli la valuta per il convertitore e il tasso del giorno."; return; }
+  $("cvConv").classList.remove("nascosto");
+  $("cvEtic").textContent = VALUTE[corrente.valuta][0] + " " + corrente.valuta;
+  $("cvEur").addEventListener("input", () => {
+    if (tassoAttuale) $("cvVal").value = Math.round(Number($("cvEur").value || 0) * tassoAttuale);
+  });
+  $("cvVal").addEventListener("input", () => {
+    if (tassoAttuale) $("cvEur").value = (Number($("cvVal").value || 0) / tassoAttuale).toFixed(2);
+  });
+  caricaTasso(corrente.valuta);
+}
+function mostraTasso(t, origine) {
+  tassoAttuale = t;
+  $("cvInfo").innerHTML = `1 € = <b>${fmtValuta(t)}</b> · ${origine} · <u id="cvMan" style="cursor:pointer">tasso manuale</u>`;
+  $("totValuta").textContent = ultimoTotale > 0 ? "≈ " + fmtValuta(ultimoTotale * t) + " in valuta locale" : "";
+  const man = document.getElementById("cvMan");
+  if (man) man.addEventListener("click", () => {
+    const v = prompt("Quanto vale 1 € in " + corrente.valuta + "?", tassoAttuale || "");
+    if (v === null) return;
+    const n = Number(String(v).replace(",", "."));
+    if (n > 0) {
+      localStorage.setItem("tasso-" + corrente.valuta, JSON.stringify({ t: n, d: "manuale" }));
+      mostraTasso(n, "tasso manuale");
+    }
+  });
+}
+async function caricaTasso(cod) {
+  const cache = JSON.parse(localStorage.getItem("tasso-" + cod) || "null");
+  try {
+    const r = await fetch("https://api.frankfurter.app/latest?from=EUR&to=" + cod);
+    const j = await r.json();
+    if (!j.rates || !j.rates[cod]) throw new Error("tasso assente");
+    localStorage.setItem("tasso-" + cod, JSON.stringify({ t: j.rates[cod], d: j.date }));
+    mostraTasso(j.rates[cod], "tasso BCE del " + j.date);
+  } catch {
+    if (cache) mostraTasso(cache.t, cache.d === "manuale" ? "tasso manuale" : "ultimo tasso noto (" + cache.d + ")");
+    else {
+      $("cvInfo").innerHTML = 'Sei offline e non ho tassi salvati: <u id="cvManOff" style="cursor:pointer">inserisci un tasso manuale</u>';
+      const man = document.getElementById("cvManOff");
+      if (man) man.addEventListener("click", () => {
+        const v = prompt("Quanto vale 1 € in " + cod + "?");
+        const n = Number(String(v || "").replace(",", "."));
+        if (n > 0) { localStorage.setItem("tasso-" + cod, JSON.stringify({ t: n, d: "manuale" })); mostraTasso(n, "tasso manuale"); }
+      });
+    }
+  }
 }
 
 // ============ MAPPA (Mapbox) ============
@@ -1034,8 +1209,26 @@ function apriModaleViaggio(modifica) {
   $("vInizio").value = modifica ? corrente.inizio : oggiISO();
   $("vFine").value = modifica ? corrente.fine : oggiISO();
   $("vPersone").value = modifica ? corrente.persone : 1;
+  renderCampiNomi();
   $("veloViaggio").classList.add("aperto");
 }
+function renderCampiNomi() {
+  const n = Math.max(1, Number($("vPersone").value) || 1);
+  const attuali = [...document.querySelectorAll(".v-nome")].map((i) => i.value);
+  const base = viaggioInModifica && corrente && corrente.nomi ? corrente.nomi : [];
+  const box = $("vNomi"); box.innerHTML = "";
+  if (n < 2) return;
+  const eti = document.createElement("label");
+  eti.textContent = "I nomi dei viaggiatori (torneranno nel budget)";
+  box.appendChild(eti);
+  for (let i = 0; i < n; i++) {
+    const inp = document.createElement("input");
+    inp.className = "v-nome"; inp.placeholder = "Nome " + (i + 1);
+    inp.value = attuali[i] !== undefined ? attuali[i] : (base[i] || "");
+    box.appendChild(inp);
+  }
+}
+$("vPersone").addEventListener("input", renderCampiNomi);
 $("vAnnulla").addEventListener("click", () => $("veloViaggio").classList.remove("aperto"));
 $("vSalva").addEventListener("click", () => {
   const nome = $("vNome").value.trim();
@@ -1043,8 +1236,11 @@ $("vSalva").addEventListener("click", () => {
   const persone = Math.max(1, Number($("vPersone").value) || 1);
   if (!nome) return alert("Dai un nome al viaggio!");
   if (!inizio || !fine || fine < inizio) return alert("Controlla le date: il ritorno deve essere dopo la partenza.");
+  const nomi = persone > 1
+    ? [...document.querySelectorAll(".v-nome")].map((inp, i) => inp.value.trim() || "Viaggiatore " + (i + 1))
+    : ["Io"];
   if (viaggioInModifica) {
-    corrente.nome = nome; corrente.persone = persone;
+    corrente.nome = nome; corrente.persone = persone; corrente.nomi = nomi;
     if (inizio !== corrente.inizio || fine !== corrente.fine) {
       const nuovi = rangeGiorni(inizio, fine);
       const orfane = [];
@@ -1059,11 +1255,36 @@ $("vSalva").addEventListener("click", () => {
     }
     salva(); renderViaggio();
   } else {
-    const v = { id: Date.now(), nome, inizio, fine, persone, giorni: rangeGiorni(inizio, fine) };
+    const v = { id: Date.now(), nome, inizio, fine, persone, nomi, giorni: rangeGiorni(inizio, fine), spese: [] };
     viaggi.push(v); salva(); apriViaggio(v.id);
   }
   $("veloViaggio").classList.remove("aperto");
 });
+
+// ============ COMPAGNI DI VIAGGIO ============
+function nomiViaggio() {
+  const n = corrente && corrente.persone ? corrente.persone : 1;
+  if (corrente && corrente.nomi && corrente.nomi.length === n) return corrente.nomi;
+  return Array.from({ length: n }, (_, i) => "Viaggiatore " + (i + 1));
+}
+let tPag = [], sPag = [];
+function chipsPagatori(boxId, sel) {
+  const box = $(boxId); box.innerHTML = "";
+  nomiViaggio().forEach((nome, i) => {
+    const c = document.createElement("button");
+    c.type = "button";
+    c.className = "chip" + (sel.includes(i) ? " scelto" : "");
+    if (sel.includes(i)) { c.style.background = "#2A9D8F"; c.style.borderColor = "#2A9D8F"; c.style.color = "#fff"; }
+    c.textContent = nome;
+    c.addEventListener("click", () => {
+      const k = sel.indexOf(i);
+      if (k >= 0) { if (sel.length > 1) sel.splice(k, 1); } // almeno un pagatore
+      else sel.push(i);
+      chipsPagatori(boxId, sel);
+    });
+    box.appendChild(c);
+  });
+}
 
 // ============ MODALE TAPPA ============
 let tipoScelto = "attivita";
@@ -1110,6 +1331,13 @@ function apriModaleTappa(modifica) {
   document.querySelectorAll(".lista-sugg").forEach((x) => x.classList.add("nascosto"));
   $("tSalva").disabled = !t;
   $("tElimina").classList.toggle("nascosto", !t);
+  tPag = (modifica && modifica.tappa && modifica.tappa.pagatori && modifica.tappa.pagatori.length)
+    ? modifica.tappa.pagatori.slice()
+    : nomiViaggio().map((_, i) => i);
+  const unaPersona = (corrente.persone || 1) <= 1;
+  $("tPagLabel").classList.toggle("nascosto", unaPersona);
+  $("tPagatori").classList.toggle("nascosto", unaPersona);
+  if (!unaPersona) chipsPagatori("tPagatori", tPag);
   $("veloTappa").classList.add("aperto");
 }
 $("tTitolo").addEventListener("input", () => { $("tSalva").disabled = $("tTitolo").value.trim() === ""; });
@@ -1136,6 +1364,7 @@ $("tSalva").addEventListener("click", async () => {
         coord: null,
         titolo: $("tTitolo").value.trim(),
         costo: Number($("tCosto").value) || 0,
+        pagatori: tPag.slice(),
       }
     : {
         tipo: tipoScelto,
@@ -1146,6 +1375,7 @@ $("tSalva").addEventListener("click", async () => {
         luogoDa: "", luogoA: "", coordDa: null, coordA: null,
         titolo: $("tTitolo").value.trim(),
         costo: Number($("tCosto").value) || 0,
+        pagatori: tPag.slice(),
       };
   const giornoDest = corrente.giorni.find((g) => String(g.id) === $("tGiorno").value);
   let tappa;
@@ -1462,7 +1692,7 @@ function mostraVista(nome) {
   for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "dafare"]) {
     $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
   }
-  $("fab").classList.toggle("nascosto", nome !== "itinerario" && nome !== "budget");
+  $("fab").classList.toggle("nascosto", nome !== "itinerario");
   if (nome === "mappa" && mappa) setTimeout(() => mappa.resize(), 50);
 }
 document.querySelectorAll(".tab").forEach((b) =>
@@ -1552,14 +1782,11 @@ function aggiornaCountdown() {
 function chiudiSplash() {
   if (fcTimer) { clearInterval(fcTimer); fcTimer = null; }
   if (globoRaf) cancelAnimationFrame(globoRaf);
-  const d = $("decollo");
-  d.classList.add("vai");                                  // il muso dell'aereo decolla dal basso
+  $("splash").classList.add("via"); // dissolvenza morbida
   setTimeout(() => {
     if (globoSplash) { try { globoSplash.remove(); } catch {} globoSplash = null; }
     const sp = $("splash"); if (sp) sp.remove();
-  }, 760);
-  setTimeout(() => d.classList.add("via"), 1850);          // dissolvenza sull'home
-  setTimeout(() => d.remove(), 2400);
+  }, 850);
 }
 $("btnInizia").addEventListener("click", chiudiSplash);
 
