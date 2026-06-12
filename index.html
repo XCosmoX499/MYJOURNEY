@@ -68,7 +68,14 @@
   .q-inserisci input::placeholder { color: #b8a570; }
   .q-inserisci button { background: #2b3a55; color: #f8f2dd; border: none; border-radius: 10px;
     font-size: 19px; width: 44px; height: 34px; flex: none; }
-  .imp-riga { display: flex; align-items: center; gap: 9px; line-height: 34px; min-height: 34px; font-size: 22px; color: #2b3a55; }
+  .imp-wrap { position: relative; overflow: hidden; }
+  .imp-azioni { position: absolute; top: 0; bottom: 0; right: 0; width: 120px; display: flex; }
+  .imp-azioni button { flex: 1; border: none; color: #fff; font-size: 17px; font-family: inherit; }
+  .ia-mod { background: #4264FB; }
+  .ia-del { background: #dc2626; }
+  .imp-riga { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px;
+    line-height: 34px; min-height: 34px; font-size: 22px; color: #2b3a55;
+    background: #f8f2dd; box-shadow: inset 0 -1px 0 #c9b88a4d; will-change: transform; }
   .imp-riga .spunta { background: none; border: 2px solid #2b3a55; border-radius: 5px; width: 22px; height: 22px;
     font-size: 14px; line-height: 1; color: #2b3a55; padding: 0; flex: none; }
   .imp-riga .testo { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -162,6 +169,24 @@
     padding: 9px 0; border-bottom: 1px solid #f5f5f4; font-size: 14.5px; color: #1c1917; }
   .spesa-riga small { color: #78716c; display: block; }
   .spesa-riga .x { background: none; border: none; color: #d6d3d1; font-size: 17px; }
+  .btn-cambio { position: absolute; top: 12px; right: 12px; width: 42px; height: 42px;
+    border-radius: 50%; border: none; background: #1c1917; color: #fff; font-size: 19px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+  .calc-display { background: #1c1917; border-radius: 16px; padding: 14px 12px; margin-top: 10px; position: relative; }
+  .calc-riga { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 6px; padding-right: 52px; }
+  .calc-riga span { font-size: 13px; font-weight: 800; color: #a8a29e; letter-spacing: .5px; }
+  .calc-riga b { font-size: 31px; color: #f5f5f4; font-variant-numeric: tabular-nums;
+    max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .calc-riga.attiva b { color: #E9B824; }
+  .calc-swap { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 42px; height: 42px; border-radius: 50%; border: none; background: #E4572E; color: #fff;
+    font-size: 19px; box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+  .calc-c { position: absolute; left: 10px; top: 6px; background: none; border: none;
+    color: #78716c; font-size: 12px; font-weight: 800; padding: 4px; }
+  .calc-tasti { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .calc-tasti button { background: #f5f5f4; border: none; border-radius: 12px; padding: 14px 0;
+    font-size: 22px; font-weight: 700; color: #1c1917; }
+  .calc-tasti button:active { background: #e7e5e4; }
   #vistaMappa { padding: 0; position: relative; }
   #barraLuce {
     position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -436,6 +461,27 @@
     <div class="azioni">
       <button id="sAnnulla">Annulla</button>
       <button class="salva" id="sSalva">Salva spesa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALE CAMBIO VALUTA ===== -->
+<div class="velo" id="veloCambio">
+  <div class="modale">
+    <h3>💱 Cambio valuta</h3>
+    <label>Valuta della destinazione</label>
+    <select id="cvValuta"></select>
+    <div class="sub" id="cvInfo" style="margin-top:6px"></div>
+    <div class="calc-display">
+      <button class="calc-c" id="cvAzzera">AC</button>
+      <div class="calc-riga attiva"><span id="calcSuEt">€ EUR</span><b id="calcSu">0</b></div>
+      <button class="calc-swap" id="cvSwap" title="Inverti">⇅</button>
+      <div class="calc-riga"><span id="calcGiuEt">—</span><b id="calcGiu">—</b></div>
+    </div>
+    <div class="calc-tasti" id="cvTastiera"></div>
+    <div class="azioni">
+      <button id="cvAggiorna">🔄 Aggiorna tasso</button>
+      <button class="salva" id="cvChiudi">Fatto</button>
     </div>
   </div>
 </div>
@@ -823,10 +869,11 @@ function renderBudget() {
   const max = Math.max(...perTipo.map((x) => x.somma), 1);
   const spese = corrente.spese || [];
   $("vistaBudget").innerHTML = `
-    <div class="card totale">
+    <div class="card totale" style="position:relative">
       <div class="eyebrow" style="color:#78716c">Totale viaggio</div>
       <div class="cifra">${eur(totale)}</div>
       <div class="sub" id="totValuta"></div>
+      <button class="btn-cambio" id="btnCambio" title="Cambio valuta">💱</button>
     </div>
     <div class="card"><b>👥 Spese per viaggiatore</b>
       ${nomi.map((n, i) => `
@@ -846,11 +893,6 @@ function renderBudget() {
           <div style="display:flex;align-items:center;gap:6px"><b>${eur(sp.costo)}</b><button class="x">✕</button></div>
         </div>`).join("") : '<div class="vuoto" style="padding:10px 0">Benzina, market, taxi… le spese fuori itinerario.</div>'}
     </div>
-    <div class="card">
-      <b>💱 Cambio valuta</b>
-      <label>Valuta della destinazione</label>
-      <select id="cvValuta"></select>
-      <div class="sub" id="cvInfo" style="margin-top:6px"></div>
       <div class="riga-doppia nascosto" id="cvConv" style="margin-top:8px">
         <div><label>€ Euro</label><input id="cvEur" type="number" inputmode="decimal" placeholder="0" /></div>
         <div><label id="cvEtic">Valuta</label><input id="cvVal" type="number" inputmode="decimal" placeholder="0" /></div>
@@ -871,7 +913,12 @@ function renderBudget() {
       corrente.spese = spese.filter((x) => x.id !== id);
       salva(); renderBudget();
     }));
-  setupValuta();
+  $("btnCambio").addEventListener("click", apriCambio);
+  // totale anche in valuta locale, dal tasso in memoria
+  if (corrente.valuta) {
+    const cache = JSON.parse(localStorage.getItem("tasso-" + corrente.valuta) || "null");
+    if (cache) { tassoAttuale = cache.t; $("totValuta").textContent = "≈ " + fmtValuta(totale * cache.t) + " in valuta locale"; }
+  }
 }
 
 // ============ SPESA CONDIVISA ============
@@ -909,40 +956,92 @@ function fmtValuta(x) {
   const c = VALUTE[corrente && corrente.valuta];
   return (c ? c[0] + " " : "") + Math.round(x).toLocaleString("it-IT");
 }
-function setupValuta() {
-  const sel = $("cvValuta");
-  sel.innerHTML = '<option value="">€ Euro — nessun cambio</option>' +
+let cvImporto = "0", cvDirezione = "eur"; // eur = scrivo in euro, leggo in valuta
+function selValutaRender() {
+  $("cvValuta").innerHTML = '<option value="">— Scegli la valuta —</option>' +
     Object.entries(VALUTE).map(([k, [sim, nome]]) =>
       `<option value="${k}" ${corrente.valuta === k ? "selected" : ""}>${sim} ${nome} (${k})</option>`).join("");
-  sel.addEventListener("change", () => {
-    corrente.valuta = sel.value || null; tassoAttuale = null;
-    salva(); renderBudget();
-  });
-  if (!corrente.valuta) { $("cvInfo").textContent = "Scegli la valuta per il convertitore e il tasso del giorno."; return; }
-  $("cvConv").classList.remove("nascosto");
-  $("cvEtic").textContent = VALUTE[corrente.valuta][0] + " " + corrente.valuta;
-  $("cvEur").addEventListener("input", () => {
-    if (tassoAttuale) $("cvVal").value = Math.round(Number($("cvEur").value || 0) * tassoAttuale);
-  });
-  $("cvVal").addEventListener("input", () => {
-    if (tassoAttuale) $("cvEur").value = (Number($("cvVal").value || 0) / tassoAttuale).toFixed(2);
-  });
-  caricaTasso(corrente.valuta);
 }
+function etichetteCalc() {
+  const cod = corrente.valuta;
+  const sim = cod ? VALUTE[cod][0] + " " + cod : "—";
+  $("calcSuEt").textContent = cvDirezione === "eur" ? "€ EUR" : sim;
+  $("calcGiuEt").textContent = cvDirezione === "eur" ? sim : "€ EUR";
+}
+function aggiornaCalcolo() {
+  $("calcSu").textContent = cvImporto;
+  const n = Number(cvImporto.replace(",", ".")) || 0;
+  if (!corrente.valuta || !tassoAttuale) { $("calcGiu").textContent = "—"; return; }
+  const out = cvDirezione === "eur" ? n * tassoAttuale : n / tassoAttuale;
+  const decimali = cvDirezione === "eur" ? (tassoAttuale >= 20 ? 0 : 2) : 2;
+  $("calcGiu").textContent = out.toLocaleString("it-IT", { minimumFractionDigits: decimali, maximumFractionDigits: decimali });
+}
+function apriCambio() {
+  selValutaRender();
+  cvImporto = "0"; cvDirezione = "eur";
+  etichetteCalc(); aggiornaCalcolo();
+  $("cvInfo").textContent = corrente.valuta ? "Carico il tasso..." : "Scegli la valuta della destinazione.";
+  if (corrente.valuta) caricaTasso(corrente.valuta);
+  $("veloCambio").classList.add("aperto");
+}
+// Tastiera della calcolatrice
+(function () {
+  const tasti = ["7", "8", "9", "4", "5", "6", "1", "2", "3", ",", "0", "⌫"];
+  for (const t of tasti) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = t;
+    b.addEventListener("click", () => {
+      if (t === "⌫") cvImporto = cvImporto.length > 1 ? cvImporto.slice(0, -1) : "0";
+      else if (t === ",") { if (!cvImporto.includes(",")) cvImporto += ","; }
+      else {
+        if (cvImporto.length >= 9) return;
+        cvImporto = cvImporto === "0" ? t : cvImporto + t;
+      }
+      aggiornaCalcolo();
+    });
+    $("cvTastiera").appendChild(b);
+  }
+})();
+$("cvAzzera").addEventListener("click", () => { cvImporto = "0"; aggiornaCalcolo(); });
+$("cvSwap").addEventListener("click", () => {
+  cvDirezione = cvDirezione === "eur" ? "val" : "eur";
+  etichetteCalc(); aggiornaCalcolo();
+});
+$("cvValuta").addEventListener("change", () => {
+  corrente.valuta = $("cvValuta").value || null;
+  tassoAttuale = null; salva();
+  etichetteCalc(); aggiornaCalcolo();
+  if (corrente.valuta) { $("cvInfo").textContent = "Carico il tasso..."; caricaTasso(corrente.valuta); }
+  else $("cvInfo").textContent = "Scegli la valuta della destinazione.";
+});
+$("cvAggiorna").addEventListener("click", () => {
+  if (!corrente.valuta) return;
+  $("cvInfo").textContent = "Aggiorno il tasso...";
+  caricaTasso(corrente.valuta);
+});
+$("cvChiudi").addEventListener("click", () => {
+  $("veloCambio").classList.remove("aperto");
+  renderBudget(); // così il totale in valuta si allinea all'ultimo tasso
+});
 function mostraTasso(t, origine) {
   tassoAttuale = t;
-  $("cvInfo").innerHTML = `1 € = <b>${fmtValuta(t)}</b> · ${origine} · <u id="cvMan" style="cursor:pointer">tasso manuale</u>`;
-  $("totValuta").textContent = ultimoTotale > 0 ? "≈ " + fmtValuta(ultimoTotale * t) + " in valuta locale" : "";
-  const man = document.getElementById("cvMan");
-  if (man) man.addEventListener("click", () => {
-    const v = prompt("Quanto vale 1 € in " + corrente.valuta + "?", tassoAttuale || "");
-    if (v === null) return;
-    const n = Number(String(v).replace(",", "."));
-    if (n > 0) {
-      localStorage.setItem("tasso-" + corrente.valuta, JSON.stringify({ t: n, d: "manuale" }));
-      mostraTasso(n, "tasso manuale");
-    }
-  });
+  const info = document.getElementById("cvInfo");
+  if (info) {
+    info.innerHTML = `1 € = <b>${fmtValuta(t)}</b> · ${origine} · <u id="cvMan" style="cursor:pointer">✎ manuale</u>`;
+    const man = document.getElementById("cvMan");
+    if (man) man.addEventListener("click", () => {
+      const v = prompt("Quanto vale 1 € in " + corrente.valuta + "?", tassoAttuale || "");
+      if (v === null) return;
+      const n = Number(String(v).replace(",", "."));
+      if (n > 0) {
+        localStorage.setItem("tasso-" + corrente.valuta, JSON.stringify({ t: n, d: "manuale" }));
+        mostraTasso(n, "tasso manuale");
+      }
+    });
+  }
+  const tv = document.getElementById("totValuta");
+  if (tv && ultimoTotale > 0) tv.textContent = "≈ " + fmtValuta(ultimoTotale * t) + " in valuta locale";
+  aggiornaCalcolo();
 }
 async function caricaTasso(cod) {
   const cache = JSON.parse(localStorage.getItem("tasso-" + cod) || "null");
@@ -1575,35 +1674,65 @@ function renderDafare() {
     : "Le cose per cui vale il viaggio";
   const ordinate = [...corrente.daFare].sort((a, b) => (a.fatto === b.fatto ? 0 : a.fatto ? 1 : -1));
   for (const x of ordinate) {
+    const wrap = document.createElement("div"); wrap.className = "imp-wrap";
+    wrap.innerHTML = `
+      <div class="imp-azioni">
+        <button class="ia-mod">✏️</button>
+        <button class="ia-del">🗑</button>
+      </div>`;
     const div = document.createElement("div");
     div.className = "imp-riga" + (x.fatto ? " vissuta" : "");
     const stelle = x.fatto && x.voto ? `<span class="mini">★ ${String(x.voto).replace(".", ",")}</span>` : "";
     const foto = x.fatto && x.fotoId ? `<span class="mini">📷</span>` : "";
-    div.innerHTML = `<button class="spunta">${x.fatto ? "✓" : ""}</button><div class="testo">${x.testo}</div>${stelle}${foto}<button class="x">×</button>`;
+    div.innerHTML = `<button class="spunta">${x.fatto ? "✓" : ""}</button><div class="testo">${x.testo}</div>${stelle}${foto}`;
+    wrap.appendChild(div);
+
+    // ----- swipe a sinistra: rivela ✏️ e 🗑 -----
+    let x0 = null, y0 = null, dx = 0, rivelata = false, orizzontale = null;
+    div.addEventListener("touchstart", (e) => {
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      dx = 0; orizzontale = null; div.style.transition = "none";
+    }, { passive: true });
+    div.addEventListener("touchmove", (e) => {
+      if (x0 === null) return;
+      dx = e.touches[0].clientX - x0;
+      const dy = e.touches[0].clientY - y0;
+      if (orizzontale === null) orizzontale = Math.abs(dx) > Math.abs(dy) + 4;
+      if (!orizzontale) return;
+      const base = rivelata ? -120 : 0;
+      div.style.transform = `translateX(${Math.min(0, Math.max(-130, base + dx))}px)`;
+    }, { passive: true });
+    div.addEventListener("touchend", () => {
+      if (x0 === null) return;
+      div.style.transition = "transform .22s ease";
+      const base = rivelata ? -120 : 0;
+      rivelata = orizzontale ? base + dx < -55 : rivelata;
+      div.style.transform = `translateX(${rivelata ? -120 : 0}px)`;
+      x0 = null;
+    });
+
     div.querySelector(".spunta").addEventListener("click", (e) => {
       e.stopPropagation();
+      if (rivelata) return;
       x.fatto = !x.fatto; salva(); renderDafare();
       if (x.fatto) apriEsperienza(x); // appena vissuta: foto ricordo + voto
     });
-    div.querySelector(".x").addEventListener("click", (e) => {
-      e.stopPropagation();
+    div.addEventListener("click", () => {
+      if (rivelata) { rivelata = false; div.style.transform = "translateX(0)"; return; }
+      if (x.fatto) apriEsperienza(x);
+    });
+    wrap.querySelector(".ia-mod").addEventListener("click", () => {
+      const nuovo = prompt("Correggi la tua imperdibile:", x.testo);
+      if (nuovo !== null && nuovo.trim()) { x.testo = nuovo.trim(); salva(); }
+      renderDafare();
+    });
+    wrap.querySelector(".ia-del").addEventListener("click", async () => {
       if (!confirm(`Cancello "${x.testo}" dal quaderno?`)) return;
       corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
+      if (x.fotoId) { try { await dbElimina("foto", x.fotoId); renderFoto(); } catch {} }
       salva(); renderDafare();
     });
-    div.addEventListener("click", () => {
-      if (x.fatto) { apriEsperienza(x); return; }
-      // Riga non ancora vissuta: tocco = correggi o cancella
-      const nuovo = prompt("Correggi la tua imperdibile (svuota per cancellarla):", x.testo);
-      if (nuovo === null) return;
-      const t = nuovo.trim();
-      if (!t) {
-        if (confirm(`Cancello "${x.testo}" dal quaderno?`))
-          corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
-      } else x.testo = t;
-      salva(); renderDafare();
-    });
-    lista.appendChild(div);
+    lista.appendChild(wrap);
   }
 }
 function aggiungiImperdibile() {
