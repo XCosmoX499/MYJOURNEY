@@ -23,11 +23,9 @@
   @keyframes brilla { 50% { opacity: .85; } }
   .scena-globo { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
     width: min(78vw, 330px); height: min(78vw, 330px); }
-  .globo-css { width: 100%; height: 100%; filter: drop-shadow(0 0 52px rgba(94,141,210,.55)); }
-  .deriva { animation: deriva 38s linear infinite; }
-  @keyframes deriva { to { transform: translateX(-220px); } }
-  .rotte-cielo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 175%; height: 175%; overflow: visible; pointer-events: none; }
+  #globoSplash { position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+    box-shadow: 0 0 70px rgba(94,141,210,.5), 0 0 0 1px #9cc3ff33; background: #0a1228; }
+  #globoSplash .mapboxgl-canvas { border-radius: 50%; }
   .splash-testi { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
   .splash-testi .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .6; }
   #flipNome { font-family: 'Caveat', cursive; font-size: 34px; margin-top: 4px; color: #fff;
@@ -46,18 +44,32 @@
   .fc-incorso small { display: block; font-size: 13px; font-weight: 400; color: #C9A227; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
   .btn-inizia { display: block; margin: 20px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
     padding: 15px 44px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.4); }
-  #decollo { position: fixed; inset: 0; z-index: 300; pointer-events: none; visibility: hidden; }
+  #decollo { position: fixed; inset: 0; z-index: 300; pointer-events: none; visibility: hidden; overflow: hidden; }
   #decollo.vai { visibility: visible; }
   #decollo .cielo-decollo { position: absolute; inset: 0; opacity: 0;
-    background: linear-gradient(#05080F 0%, #1c3a6e 55%, #4a7ec2 100%); }
-  #decollo.vai .cielo-decollo { animation: apparireCielo .5s ease forwards; }
+    background: linear-gradient(180deg, #0b1838 0%, #27406e 38%, #7a6aa0 68%, #e89a6b 88%, #ffc08a 100%); }
+  #decollo.vai .cielo-decollo { animation: apparireCielo .45s ease forwards; }
   @keyframes apparireCielo { to { opacity: 1; } }
-  #decollo .muso { position: absolute; left: 50%; bottom: 0; width: 150vw; max-width: 900px;
-    transform: translate(-50%, 112%); filter: drop-shadow(0 -10px 40px rgba(0,0,0,.5)); }
-  #decollo.vai .muso { animation: decolla 1.5s cubic-bezier(.5, 0, .15, 1) forwards; }
-  @keyframes decolla { 35% { transform: translate(-50%, 30%) scale(1.04); } 100% { transform: translate(-50%, -135%) scale(1.15); } }
+  .nube { position: absolute; width: 70vw; height: 18vw; max-width: 420px; max-height: 110px;
+    background: radial-gradient(closest-side, #ffffffee 30%, #ffffff00 100%);
+    border-radius: 50%; filter: blur(6px); opacity: 0; will-change: transform; }
+  .n-dietro { opacity: 0; }
+  .n-davanti { filter: blur(3px); }
+  #decollo.vai .nube { animation-name: nubePassa; animation-timing-function: linear; animation-fill-mode: forwards; }
+  @keyframes nubePassa { 0% { opacity: 0; transform: translate3d(0,0,0) scale(var(--sc,1)); }
+    12% { opacity: .9; } 88% { opacity: .9; }
+    100% { opacity: 0; transform: translate3d(170vw, -14vh, 0) scale(var(--sc,1)); } }
+  .aereo-volo { position: absolute; left: 0; bottom: 0; width: min(86vw, 520px); will-change: transform;
+    transform: translate3d(-110%, 30vh, 0) rotate(-10deg);
+    filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); }
+  #decollo.vai .aereo-volo { animation: attraversa 2s cubic-bezier(.45, .05, .3, .95) forwards; }
+  @keyframes attraversa {
+    0%   { transform: translate3d(-110%, 26vh, 0) rotate(-8deg); }
+    45%  { transform: translate3d(28vw, -34vh, 0) rotate(-14deg); }
+    100% { transform: translate3d(125vw, -86vh, 0) rotate(-16deg); }
+  }
   #decollo.via { transition: opacity .45s ease; opacity: 0; }
-  @media (prefers-reduced-motion: reduce) { .deriva, .stella, .fc-card.gira { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .stella, .fc-card.gira, .nube, .aereo-volo { animation: none !important; } }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
   .bottone-file { display: flex; align-items: center; justify-content: center; flex: 1;
@@ -69,7 +81,8 @@
   #vistaDafare { padding: 0; }
   #quaderno { min-height: calc(100vh - 150px); background: #f8f2dd;
     background-image: repeating-linear-gradient(transparent 0 33px, #c9b88a4d 33px 34px);
-    padding: 20px 14px 110px 44px; position: relative;
+    padding: 34px 14px 110px 44px; position: relative;
+    background-position: 0 34px;
     font-family: 'Caveat', 'Bradley Hand', 'Segoe Script', cursive; }
   #quaderno::before { content: ''; position: absolute; top: 0; bottom: 0; left: 30px; width: 2px; background: #d9777759; }
   .q-titolo { font-size: 31px; color: #2b3a55; font-weight: 700; line-height: 34px; }
@@ -243,55 +256,7 @@
 <!-- ===== SPLASH ===== -->
 <div id="splash">
   <div id="cieloStelle"></div>
-  <div class="scena-globo">
-    <svg class="globo-css" viewBox="0 0 220 220">
-      <defs>
-        <radialGradient id="gOceano" cx="35%" cy="30%" r="95%">
-          <stop offset="0%" stop-color="#46689c"/><stop offset="55%" stop-color="#27406e"/><stop offset="100%" stop-color="#101d3d"/>
-        </radialGradient>
-        <radialGradient id="gAtmo" cx="50%" cy="50%" r="50%">
-          <stop offset="78%" stop-color="#7FA3D8" stop-opacity="0"/><stop offset="100%" stop-color="#9cc3ff" stop-opacity=".5"/>
-        </radialGradient>
-        <clipPath id="clipGlobo"><circle cx="110" cy="110" r="100"/></clipPath>
-      </defs>
-      <circle cx="110" cy="110" r="100" fill="url(#gOceano)"/>
-      <g clip-path="url(#clipGlobo)">
-        <g class="deriva" fill="#2A9D8F">
-          <g opacity=".9">
-            <path d="M30 70 q18 -22 46 -14 q16 5 12 20 q-4 16 -24 18 q-24 4 -34 -10 q-5 -8 0 -14z"/>
-            <path d="M118 104 q26 -8 38 9 q10 14 -2 26 q-14 13 -33 5 q-14 -7 -12 -21 q2 -14 9 -19z"/>
-            <path d="M52 134 q14 -5 21 7 q6 12 -5 21 q-12 9 -23 2 q-9 -7 -5 -19 q4 -9 12 -11z"/>
-            <path d="M150 48 q14 -8 24 0 q9 8 2 18 q-8 10 -20 6 q-11 -4 -10 -13 q1 -8 4 -11z"/>
-          </g>
-          <g opacity=".9" transform="translate(220,0)">
-            <path d="M30 70 q18 -22 46 -14 q16 5 12 20 q-4 16 -24 18 q-24 4 -34 -10 q-5 -8 0 -14z"/>
-            <path d="M118 104 q26 -8 38 9 q10 14 -2 26 q-14 13 -33 5 q-14 -7 -12 -21 q2 -14 9 -19z"/>
-            <path d="M52 134 q14 -5 21 7 q6 12 -5 21 q-12 9 -23 2 q-9 -7 -5 -19 q4 -9 12 -11z"/>
-            <path d="M150 48 q14 -8 24 0 q9 8 2 18 q-8 10 -20 6 q-11 -4 -10 -13 q1 -8 4 -11z"/>
-          </g>
-        </g>
-        <ellipse cx="110" cy="30" rx="150" ry="26" fill="#ffffff" opacity=".08"/>
-      </g>
-      <circle cx="110" cy="110" r="100" fill="url(#gAtmo)"/>
-      <circle cx="110" cy="110" r="100" fill="none" stroke="#9cc3ff55" stroke-width="1.2"/>
-    </svg>
-    <svg class="rotte-cielo" viewBox="0 0 500 500">
-      <defs>
-        <path id="rottaCielo1" d="M 250 95 A 175 75 18 1 1 249.9 95.01" fill="none"/>
-        <path id="rottaCielo2" d="M 250 130 A 145 105 -25 1 0 250.1 129.99" fill="none"/>
-      </defs>
-      <use href="#rottaCielo1" stroke="#ffffff22" stroke-width="1.4" stroke-dasharray="3 7"/>
-      <use href="#rottaCielo2" stroke="#ffffff1c" stroke-width="1.2" stroke-dasharray="3 7"/>
-      <g fill="#fff">
-        <path d="M14 0 L3 4 L-8 1.4 L-11 2.6 L-4 5.4 L-9 7 L-13 6 L-15 7 L-9 10 L3 8 L14 3 Q17 1.5 14 0z" opacity=".95">
-          <animateMotion dur="16s" repeatCount="indefinite" rotate="auto"><mpath href="#rottaCielo1"/></animateMotion>
-        </path>
-        <path d="M11 0 L2.4 3.2 L-6.4 1.1 L-8.8 2.1 L-3.2 4.3 L-7.2 5.6 L-10.4 4.8 L-12 5.6 L-7.2 8 L2.4 6.4 L11 2.4 Q13.6 1.2 11 0z" opacity=".75">
-          <animateMotion dur="23s" repeatCount="indefinite" rotate="auto"><mpath href="#rottaCielo2"/></animateMotion>
-        </path>
-      </g>
-    </svg>
-  </div>
+  <div class="scena-globo"><div id="globoSplash"></div></div>
   <div class="splash-testi">
     <div class="eyebrow">Diario di bordo</div>
     <div id="flipNome"></div>
@@ -307,21 +272,55 @@
 </div>
 <div id="decollo">
   <div class="cielo-decollo"></div>
-  <svg class="muso" viewBox="0 0 400 300">
+  <div class="nube n-dietro" style="top:22%; left:-46%; --sc:1.25; animation-duration:2.6s;"></div>
+  <div class="nube n-dietro" style="top:58%; left:-66%; --sc:.9; animation-duration:3.1s;"></div>
+  <svg class="aereo-volo" viewBox="0 0 520 200">
     <defs>
-      <linearGradient id="gFus" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#cfd4dc"/><stop offset="100%" stop-color="#9aa3b2"/>
+      <linearGradient id="gFusoliera" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="55%" stop-color="#dfe5ee"/>
+        <stop offset="80%" stop-color="#aeb9c9"/>
+        <stop offset="100%" stop-color="#8b98ab"/>
+      </linearGradient>
+      <linearGradient id="gCoda" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ff8a5c"/><stop offset="100%" stop-color="#E4572E"/>
+      </linearGradient>
+      <linearGradient id="gAla" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#cdd6e2"/><stop offset="100%" stop-color="#93a1b5"/>
       </linearGradient>
     </defs>
-    <rect x="-40" y="208" width="180" height="26" rx="13" fill="#b9c0cc" transform="rotate(8 50 220)"/>
-    <rect x="260" y="208" width="180" height="26" rx="13" fill="#b9c0cc" transform="rotate(-8 350 220)"/>
-    <ellipse cx="88" cy="252" rx="26" ry="18" fill="#5c6675"/>
-    <ellipse cx="312" cy="252" rx="26" ry="18" fill="#5c6675"/>
-    <path d="M200 28 Q300 38 312 180 L312 300 L88 300 L88 180 Q100 38 200 28z" fill="url(#gFus)"/>
-    <path d="M200 64 Q252 70 262 118 L240 132 Q222 108 200 108 Q178 108 160 132 L138 118 Q148 70 200 64z" fill="#1c2733"/>
-    <path d="M200 64 Q252 70 262 118 L254 123 Q230 92 200 92 Q170 92 146 123 L138 118 Q148 70 200 64z" fill="#3d4f63"/>
-    <ellipse cx="200" cy="186" rx="64" ry="10" fill="#ffffff66"/>
+    <!-- deriva di coda -->
+    <path d="M64 96 L96 34 Q102 24 114 28 L132 36 L118 100z" fill="url(#gCoda)"/>
+    <path d="M70 98 L52 70 Q48 62 58 62 L86 64z" fill="#b9c4d4"/>
+    <!-- fusoliera -->
+    <path d="M60 100 Q70 84 130 80 L380 74 Q452 76 492 96 Q500 100 492 106 Q440 128 360 128 L130 124 Q72 120 60 108 Q56 104 60 100z" fill="url(#gFusoliera)"/>
+    <!-- riflesso superiore -->
+    <path d="M120 84 L380 78 Q430 80 462 92 Q420 84 380 84 L130 88 Q120 88 120 84z" fill="#ffffff" opacity=".75"/>
+    <!-- parabrezza -->
+    <path d="M452 88 Q474 92 486 99 L470 102 Q458 102 450 96z" fill="#27384c"/>
+    <!-- finestrini -->
+    <g fill="#3d4f63">
+      <circle cx="170" cy="96" r="4.4"/><circle cx="194" cy="95.6" r="4.4"/><circle cx="218" cy="95.2" r="4.4"/>
+      <circle cx="242" cy="94.8" r="4.4"/><circle cx="266" cy="94.4" r="4.4"/><circle cx="290" cy="94" r="4.4"/>
+      <circle cx="314" cy="93.6" r="4.4"/><circle cx="338" cy="93.2" r="4.4"/><circle cx="362" cy="92.8" r="4.4"/>
+    </g>
+    <!-- ala lontana (dietro, più scura) -->
+    <path d="M260 82 L196 46 Q188 42 196 40 L230 40 L300 78z" fill="#7e8ca0"/>
+    <!-- ala vicina -->
+    <path d="M250 104 L330 158 Q336 164 326 166 L284 164 L208 110z" fill="url(#gAla)"/>
+    <!-- motore -->
+    <g>
+      <ellipse cx="252" cy="128" rx="26" ry="14" fill="#5c6675"/>
+      <ellipse cx="252" cy="128" rx="26" ry="14" fill="url(#gAla)" opacity=".55"/>
+      <ellipse cx="228" cy="128" rx="6" ry="11" fill="#27384c"/>
+    </g>
+    <!-- stabilizzatore di coda -->
+    <path d="M74 104 L34 122 Q26 126 34 130 L70 128 L96 112z" fill="url(#gAla)"/>
+    <!-- luce calda dal basso (tramonto) -->
+    <path d="M60 108 Q72 120 130 124 L360 128 Q440 128 492 106 Q440 122 360 120 L132 118 Q80 114 60 108z" fill="#ffb37a" opacity=".4"/>
   </svg>
+  <div class="nube n-davanti" style="top:34%; left:-58%; --sc:1.5; animation-duration:2.1s;"></div>
+  <div class="nube n-davanti" style="top:72%; left:-50%; --sc:1.1; animation-duration:2.5s;"></div>
 </div>
 
 <!-- ===== HOME ===== -->
@@ -1362,7 +1361,18 @@ function renderDafare() {
       corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
       salva(); renderDafare();
     });
-    div.addEventListener("click", () => { if (x.fatto) apriEsperienza(x); });
+    div.addEventListener("click", () => {
+      if (x.fatto) { apriEsperienza(x); return; }
+      // Riga non ancora vissuta: tocco = correggi o cancella
+      const nuovo = prompt("Correggi la tua imperdibile (svuota per cancellarla):", x.testo);
+      if (nuovo === null) return;
+      const t = nuovo.trim();
+      if (!t) {
+        if (confirm(`Cancello "${x.testo}" dal quaderno?`))
+          corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
+      } else x.testo = t;
+      salva(); renderDafare();
+    });
     lista.appendChild(div);
   }
 }
@@ -1477,6 +1487,29 @@ function avviaSplash() {
   }
   aggiornaCountdown();
   fcTimer = setInterval(aggiornaCountdown, 1000);
+  avviaGloboSplash();
+}
+// Globo satellitare Mapbox che ruota lentamente (sull'anteprima in chat resta il cielo stellato)
+let globoSplash = null, globoRaf = null;
+function avviaGloboSplash() {
+  if (!tokenValido() || !mapboxDisponibile()) return;
+  try {
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    globoSplash = new mapboxgl.Map({
+      container: "globoSplash",
+      style: "mapbox://styles/mapbox/standard-satellite",
+      projection: "globe",
+      center: [15, 18], zoom: 0.85,
+      interactive: false, attributionControl: false,
+    });
+    let lng = 15;
+    const gira = () => {
+      lng = (lng + 0.045) % 360;
+      try { globoSplash.setCenter([lng, 18]); } catch {}
+      globoRaf = requestAnimationFrame(gira);
+    };
+    globoSplash.on("load", gira);
+  } catch {}
 }
 function setCifra(idCard, val) {
   const card = $(idCard);
@@ -1518,11 +1551,15 @@ function aggiornaCountdown() {
 }
 function chiudiSplash() {
   if (fcTimer) { clearInterval(fcTimer); fcTimer = null; }
+  if (globoRaf) cancelAnimationFrame(globoRaf);
   const d = $("decollo");
   d.classList.add("vai");                                  // il muso dell'aereo decolla dal basso
-  setTimeout(() => { const sp = $("splash"); if (sp) sp.remove(); }, 760);
-  setTimeout(() => d.classList.add("via"), 1500);          // dissolvenza sull'home
-  setTimeout(() => d.remove(), 2000);
+  setTimeout(() => {
+    if (globoSplash) { try { globoSplash.remove(); } catch {} globoSplash = null; }
+    const sp = $("splash"); if (sp) sp.remove();
+  }, 760);
+  setTimeout(() => d.classList.add("via"), 1850);          // dissolvenza sull'home
+  setTimeout(() => d.remove(), 2400);
 }
 $("btnInizia").addEventListener("click", chiudiSplash);
 
