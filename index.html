@@ -187,6 +187,11 @@
   .calc-tasti button { background: #f5f5f4; border: none; border-radius: 12px; padding: 14px 0;
     font-size: 22px; font-weight: 700; color: #1c1917; }
   .calc-tasti button:active { background: #e7e5e4; }
+  #toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%) translateY(8px);
+    background: #1c1917; color: #fff; padding: 11px 18px; border-radius: 999px; font-size: 14px;
+    z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease; max-width: 86vw; text-align: center; }
+  #toast.visibile { opacity: 1; transform: translateX(-50%) translateY(0); }
   #vistaMappa { padding: 0; position: relative; }
   #barraLuce {
     position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -465,6 +470,19 @@
   </div>
 </div>
 
+<!-- ===== DIALOGO INTERNO (sostituisce confirm/prompt del browser) ===== -->
+<div class="velo" id="veloDialogo">
+  <div class="modale">
+    <h3 id="dlgTitolo"></h3>
+    <p id="dlgTesto" class="sub" style="margin:6px 0 0"></p>
+    <input id="dlgInput" class="nascosto" />
+    <div class="azioni">
+      <button id="dlgAnnulla">Annulla</button>
+      <button class="salva" id="dlgOk">Conferma</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODALE CAMBIO VALUTA ===== -->
 <div class="velo" id="veloCambio">
   <div class="modale">
@@ -577,6 +595,49 @@ const ICONE_SVG = {
 };
 const CHIAVE = "agenda-viaggi-v2";
 const $ = (id) => document.getElementById(id);
+
+// ============ TOAST E DIALOGHI INTERNI ============
+// Niente alert/confirm/prompt del browser: brutti, mostrano il dominio,
+// e iOS può sopprimerli per sempre con "Elimina finestre di dialogo".
+function toast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add("visibile");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("visibile"), 2400);
+}
+let dlgRisolvi = null, dlgConInput = false;
+function chiudiDialogo(valore) {
+  $("veloDialogo").classList.remove("aperto");
+  const r = dlgRisolvi; dlgRisolvi = null;
+  if (r) r(valore);
+}
+function chiediConferma(titolo, testo, okLabel, pericolo) {
+  return new Promise((res) => {
+    dlgRisolvi = res; dlgConInput = false;
+    $("dlgTitolo").textContent = titolo;
+    $("dlgTesto").textContent = testo || "";
+    $("dlgTesto").classList.toggle("nascosto", !testo);
+    $("dlgInput").classList.add("nascosto");
+    $("dlgOk").textContent = okLabel || "Conferma";
+    $("dlgOk").style.background = pericolo ? "#dc2626" : "";
+    $("veloDialogo").classList.add("aperto");
+  });
+}
+function chiediTesto(titolo, valore, okLabel) {
+  return new Promise((res) => {
+    dlgRisolvi = res; dlgConInput = true;
+    $("dlgTitolo").textContent = titolo;
+    $("dlgTesto").classList.add("nascosto");
+    const inp = $("dlgInput");
+    inp.classList.remove("nascosto"); inp.value = valore || "";
+    $("dlgOk").textContent = okLabel || "Salva";
+    $("dlgOk").style.background = "";
+    $("veloDialogo").classList.add("aperto");
+    setTimeout(() => inp.focus(), 60);
+  });
+}
 const eur = (n) => n === 0 ? "Gratis" : "€ " + n.toLocaleString("it-IT");
 const isTrasporto = (tipo) => tipo === "volo" || tipo === "treno";
 
@@ -711,7 +772,7 @@ function renderHome() {
       <button class="x">✕</button>`;
     card.querySelector(".info").addEventListener("click", () => apriViaggio(v.id));
     card.querySelector(".x").addEventListener("click", async () => {
-      if (!confirm('Eliminare il viaggio "' + v.nome + '"? Verranno eliminati anche foto e biglietti.')) return;
+      if (!(await chiediConferma("Eliminare il viaggio?", '"' + v.nome + '" — verranno eliminati anche foto e biglietti.', "Elimina", true))) return;
       viaggi = viaggi.filter((x) => x.id !== v.id); salva();
       for (const st of ["foto", "biglietti"]) {
         const tutti = await dbTutti(st);
@@ -796,13 +857,13 @@ function renderItinerario() {
       giornoAperto = aperto ? null : g.id;
       renderItinerario();
     });
-    wrap.querySelector(".ga-rinomina").addEventListener("click", () => {
-      const nuovo = prompt("Titolo del giorno:", g.titolo);
-      if (nuovo && nuovo.trim()) { g.titolo = nuovo.trim(); salva(); }
+    wrap.querySelector(".ga-rinomina").addEventListener("click", async () => {
+      const nuovo = await chiediTesto("Titolo del giorno", g.titolo);
+      if (nuovo !== null && nuovo.trim()) { g.titolo = nuovo.trim(); salva(); }
       renderItinerario();
     });
-    wrap.querySelector(".ga-svuota").addEventListener("click", () => {
-      if (g.tappe.length === 0 || confirm(`Svuoto "${g.titolo}" (${g.tappe.length} attività)?`)) {
+    wrap.querySelector(".ga-svuota").addEventListener("click", async () => {
+      if (g.tappe.length === 0 || await chiediConferma("Svuotare la giornata?", `"${g.titolo}" — ${g.tappe.length} attività verranno rimosse.`, "Svuota", true)) {
         g.tappe = []; salva();
       }
       renderItinerario();
@@ -906,10 +967,10 @@ function renderBudget() {
         </div>`).join("")}</div>` : ""}`;
   $("btnSpesa").addEventListener("click", apriModaleSpesa);
   document.querySelectorAll(".spesa-riga .x").forEach((b) =>
-    b.addEventListener("click", (e) => {
+    b.addEventListener("click", async (e) => {
       const id = Number(e.target.closest(".spesa-riga").dataset.id);
       const sp = spese.find((x) => x.id === id);
-      if (!confirm(`Elimino "${sp.titolo}" (${eur(sp.costo)})?`)) return;
+      if (!(await chiediConferma("Eliminare la spesa?", `"${sp.titolo}" — ${eur(sp.costo)}`, "Elimina", true))) return;
       corrente.spese = spese.filter((x) => x.id !== id);
       salva(); renderBudget();
     }));
@@ -932,8 +993,8 @@ $("sAnnulla").addEventListener("click", () => $("veloSpesa").classList.remove("a
 $("sSalva").addEventListener("click", () => {
   const titolo = $("sNome").value.trim();
   const costo = Number($("sImporto").value) || 0;
-  if (!titolo) return alert("Descrivi la spesa!");
-  if (costo <= 0) return alert("Inserisci l'importo.");
+  if (!titolo) return toast("Descrivi la spesa!");
+  if (costo <= 0) return toast("Inserisci l'importo.");
   corrente.spese = corrente.spese || [];
   corrente.spese.push({ id: Date.now(), titolo, costo, pagatori: sPag.slice() });
   salva();
@@ -1029,8 +1090,8 @@ function mostraTasso(t, origine) {
   if (info) {
     info.innerHTML = `1 € = <b>${fmtValuta(t)}</b> · ${origine} · <u id="cvMan" style="cursor:pointer">✎ manuale</u>`;
     const man = document.getElementById("cvMan");
-    if (man) man.addEventListener("click", () => {
-      const v = prompt("Quanto vale 1 € in " + corrente.valuta + "?", tassoAttuale || "");
+    if (man) man.addEventListener("click", async () => {
+      const v = await chiediTesto("Quanto vale 1 € in " + corrente.valuta + "?", tassoAttuale || "");
       if (v === null) return;
       const n = Number(String(v).replace(",", "."));
       if (n > 0) {
@@ -1056,8 +1117,8 @@ async function caricaTasso(cod) {
     else {
       $("cvInfo").innerHTML = 'Sei offline e non ho tassi salvati: <u id="cvManOff" style="cursor:pointer">inserisci un tasso manuale</u>';
       const man = document.getElementById("cvManOff");
-      if (man) man.addEventListener("click", () => {
-        const v = prompt("Quanto vale 1 € in " + cod + "?");
+      if (man) man.addEventListener("click", async () => {
+        const v = await chiediTesto("Quanto vale 1 € in " + cod + "?");
         const n = Number(String(v || "").replace(",", "."));
         if (n > 0) { localStorage.setItem("tasso-" + cod, JSON.stringify({ t: n, d: "manuale" })); mostraTasso(n, "tasso manuale"); }
       });
@@ -1103,7 +1164,7 @@ function lucePerOra() {
 // ===== Tour 3D: gli edifici 3D di Mapbox Standard compaiono solo a zoom alto (15+) =====
 let puntiMappa = [], indice3d = 0;
 function vola3d() {
-  if (!mappa || !puntiMappa.length) return alert("Aggiungi prima qualche tappa con un luogo!");
+  if (!mappa || !puntiMappa.length) return toast("Aggiungi prima qualche tappa con un luogo!");
   const punto = puntiMappa[indice3d % puntiMappa.length];
   indice3d++;
   mappa.flyTo({
@@ -1333,8 +1394,8 @@ $("vSalva").addEventListener("click", () => {
   const nome = $("vNome").value.trim();
   const inizio = $("vInizio").value, fine = $("vFine").value;
   const persone = Math.max(1, Number($("vPersone").value) || 1);
-  if (!nome) return alert("Dai un nome al viaggio!");
-  if (!inizio || !fine || fine < inizio) return alert("Controlla le date: il ritorno deve essere dopo la partenza.");
+  if (!nome) return toast("Dai un nome al viaggio!");
+  if (!inizio || !fine || fine < inizio) return toast("Controlla le date: il ritorno deve essere dopo la partenza.");
   const nomi = persone > 1
     ? [...document.querySelectorAll(".v-nome")].map((inp, i) => inp.value.trim() || "Viaggiatore " + (i + 1))
     : ["Io"];
@@ -1350,7 +1411,7 @@ $("vSalva").addEventListener("click", () => {
       }
       if (orfane.length) nuovi[0].tappe.push(...orfane);
       corrente.inizio = inizio; corrente.fine = fine; corrente.giorni = nuovi;
-      if (orfane.length) alert(orfane.length + " tappe erano in giorni rimossi: le trovi nel primo giorno.");
+      if (orfane.length) toast(orfane.length + " tappe erano in giorni rimossi: le trovi nel primo giorno.");
     }
     salva(); renderViaggio();
   } else {
@@ -1441,9 +1502,9 @@ function apriModaleTappa(modifica) {
 }
 $("tTitolo").addEventListener("input", () => { $("tSalva").disabled = $("tTitolo").value.trim() === ""; });
 $("tAnnulla").addEventListener("click", () => $("veloTappa").classList.remove("aperto"));
-$("tElimina").addEventListener("click", () => {
+$("tElimina").addEventListener("click", async () => {
   if (!tappaInModifica) return;
-  if (!confirm('Eliminare "' + tappaInModifica.tappa.titolo + '"?')) return;
+  if (!(await chiediConferma("Eliminare la tappa?", '"' + tappaInModifica.tappa.titolo + '"', "Elimina", true))) return;
   const g = tappaInModifica.giorno;
   g.tappe = g.tappe.filter((x) => x.id !== tappaInModifica.tappa.id);
   salva(); $("veloTappa").classList.remove("aperto"); renderViaggio();
@@ -1529,7 +1590,7 @@ $("fileFoto").addEventListener("change", async (e) => {
     e.target.value = "";
     await renderFoto();
   } catch (err) {
-    alert("Non sono riuscito a salvare le foto: " + (err && err.message ? err.message : err));
+    toast("Non sono riuscito a salvare le foto: " + (err && err.message ? err.message : err));
   }
 });
 let fotoCorrenti = [];
@@ -1566,7 +1627,8 @@ function apriVisore(f) {
 }
 $("visoreChiudi").addEventListener("click", () => $("visore").classList.add("nascosto"));
 $("visoreElimina").addEventListener("click", async () => {
-  if (!fotoAperta || !confirm("Eliminare questa foto?")) return;
+  if (!fotoAperta) return;
+  if (!(await chiediConferma("Eliminare questa foto?", "", "Elimina", true))) return;
   await dbElimina("foto", fotoAperta.id);
   $("visore").classList.add("nascosto");
   renderFoto();
@@ -1574,7 +1636,7 @@ $("visoreElimina").addEventListener("click", async () => {
 // Album: scorrimento di tutte le foto, raggruppate per località
 let albumIndice = 0, albumTimer = null;
 $("btnAlbum").addEventListener("click", () => {
-  if (!fotoCorrenti.length) return alert("Aggiungi prima qualche foto!");
+  if (!fotoCorrenti.length) return toast("Aggiungi prima qualche foto!");
   albumIndice = 0;
   mostraFotoAlbum();
   $("album").classList.remove("nascosto");
@@ -1620,7 +1682,7 @@ $("fileBiglietto").addEventListener("change", async (e) => {
     e.target.value = "";
     await renderBiglietti();
   } catch (err) {
-    alert("Non sono riuscito a salvare il biglietto: " + (err && err.message ? err.message : err));
+    toast("Non sono riuscito a salvare il biglietto: " + (err && err.message ? err.message : err));
   }
 });
 async function renderBiglietti() {
@@ -1645,7 +1707,7 @@ async function renderBiglietti() {
           const a = document.createElement("a");
           a.href = url; a.target = "_blank"; a.rel = "noopener";
           document.body.appendChild(a); a.click(); a.remove();
-        } catch { alert("Non riesco ad aprire il PDF su questo browser."); }
+        } catch { toast("Non riesco ad aprire il PDF su questo browser."); }
       } else {
         fotoAperta = null;
         $("visoreImg").src = srcFoto(b);
@@ -1654,7 +1716,7 @@ async function renderBiglietti() {
       }
     });
     div.querySelector(".cancella").addEventListener("click", async () => {
-      if (!confirm('Eliminare "' + b.nome + '"?')) return;
+      if (!(await chiediConferma("Eliminare il biglietto?", '"' + b.nome + '"', "Elimina", true))) return;
       await dbElimina("biglietti", b.id);
       renderBiglietti();
     });
@@ -1721,13 +1783,13 @@ function renderDafare() {
       if (rivelata) { rivelata = false; div.style.transform = "translateX(0)"; return; }
       if (x.fatto) apriEsperienza(x);
     });
-    wrap.querySelector(".ia-mod").addEventListener("click", () => {
-      const nuovo = prompt("Correggi la tua imperdibile:", x.testo);
+    wrap.querySelector(".ia-mod").addEventListener("click", async () => {
+      const nuovo = await chiediTesto("Correggi la tua imperdibile", x.testo);
       if (nuovo !== null && nuovo.trim()) { x.testo = nuovo.trim(); salva(); }
       renderDafare();
     });
     wrap.querySelector(".ia-del").addEventListener("click", async () => {
-      if (!confirm(`Cancello "${x.testo}" dal quaderno?`)) return;
+      if (!(await chiediConferma("Cancellare dal quaderno?", `"${x.testo}"` + (x.fotoId ? " — anche la foto ricordo verrà eliminata." : ""), "Cancella", true))) return;
       corrente.daFare = corrente.daFare.filter((y) => y.id !== x.id);
       if (x.fotoId) { try { await dbElimina("foto", x.fotoId); renderFoto(); } catch {} }
       salva(); renderDafare();
@@ -1811,7 +1873,7 @@ $("fileEsperienza").addEventListener("change", async (e) => {
     e.target.value = "";
     renderFoto();
   } catch (err) {
-    alert("Non sono riuscito a salvare la foto: " + (err && err.message ? err.message : err));
+    toast("Non sono riuscito a salvare la foto: " + (err && err.message ? err.message : err));
   }
 });
 
@@ -1829,6 +1891,9 @@ document.querySelectorAll(".tab").forEach((b) =>
 $("indietro").addEventListener("click", () => { corrente = null; renderHome(); });
 $("modificaViaggio").addEventListener("click", () => apriModaleViaggio(true));
 $("fab").addEventListener("click", () => corrente ? apriModaleTappa(null) : apriModaleViaggio(false));
+$("dlgOk").addEventListener("click", () => chiudiDialogo(dlgConInput ? $("dlgInput").value : true));
+$("dlgAnnulla").addEventListener("click", () => chiudiDialogo(dlgConInput ? null : false));
+$("veloDialogo").addEventListener("click", (e) => { if (e.target === $("veloDialogo")) chiudiDialogo(dlgConInput ? null : false); });
 document.querySelectorAll(".velo").forEach((v) =>
   v.addEventListener("click", (e) => { if (e.target === v) v.classList.remove("aperto"); }));
 
