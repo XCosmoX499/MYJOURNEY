@@ -50,6 +50,20 @@
     background: radial-gradient(ellipse 60% 8% at 50% 62%, #aee0ff55, transparent 70%);
     animation: pulsaScia 5.5s ease-in-out infinite; }
   @keyframes pulsaScia { 0%,100% { opacity: .25; } 50% { opacity: .7; } }
+
+  /* ===== FASE 3: vita ===== */
+  /* l'aereo vola: lo muovo via JS lungo l'orbita; qui solo lo stile di base */
+  #aereoVolo { position: absolute; z-index: 4; width: 76px; left: 0; top: 0;
+    will-change: transform, opacity; pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
+  /* la mongolfiera fluttua dolcemente in alto a sinistra, nel cielo libero */
+  #mongolfieraVolo { position: absolute; z-index: 4; width: 66px; left: 8%; top: 20%;
+    pointer-events: none; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5));
+    animation: fluttua 7s ease-in-out infinite; transform-origin: 50% 0%; }
+  @keyframes fluttua {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-16px) rotate(2deg); }
+  }
   /* i testi e l'orologio vivono nel cielo basso lasciato libero dall'immagine */
   .splash-testi { position: absolute; left: 0; right: 0; bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
@@ -72,7 +86,8 @@
     padding: 15px 40px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.45); }
   .btn-inizia svg { width: 20px; height: 20px; fill: #fff; }
   @media (prefers-reduced-motion: reduce) {
-    .stella, .stella.viva, .fc-card.gira, #sfondoSplash, #bagliorescia, #stellaCadente { animation: none !important; }
+    .stella, .stella.viva, .fc-card.gira, #sfondoSplash, #bagliorescia, #stellaCadente, #mongolfieraVolo { animation: none !important; }
+    #aereoVolo { display: none !important; }
   }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
@@ -330,6 +345,8 @@
   <div id="bagliorescia"></div>
   <div id="cieloStelle"></div>
   <div id="stellaCadente"></div>
+  <img id="mongolfieraVolo" src="mongolfiera.png" alt="" />
+  <img id="aereoVolo" src="aereo.png" alt="" />
   <div class="splash-testi">
     <div class="eyebrow">Diario di bordo</div>
     <div id="flipNome"></div>
@@ -2076,8 +2093,50 @@ function avviaSplash() {
     cielo.appendChild(st);
   }
   avviaStellaCadente();
+  avviaAereo();
   aggiornaCountdown();
   fcTimer = setInterval(aggiornaCountdown, 1000);
+}
+// L'aereo orbita lungo l'ellisse della scia attorno al globo.
+// Trucco di profondità: nella metà ALTA dell'orbita passa "dietro" il globo
+// (più piccolo e sbiadito), nella metà BASSA passa "davanti" (pieno e grande).
+let aereoRaf = null;
+function avviaAereo() {
+  const aereo = $("aereoVolo");
+  const splash = $("splash");
+  if (!aereo || !splash) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    aereo.style.display = "none"; return;
+  }
+  const t0 = performance.now();
+  const giroMs = 14000; // un giro completo in 14 secondi
+  function passo(ora) {
+    const r = splash.getBoundingClientRect();
+    const W = r.width, H = r.height;
+    // centro ed ampiezza dell'ellisse, in proporzione all'immagine (il globo sta in alto)
+    const cx = W * 0.50, cy = H * 0.455;
+    const rx = W * 0.46, ry = H * 0.135;
+    const ang = ((ora - t0) % giroMs) / giroMs * Math.PI * 2;
+    // parte da sinistra e gira; sin>0 = metà bassa (davanti)
+    const x = cx + Math.cos(ang) * rx;
+    const y = cy + Math.sin(ang) * ry;
+    const davanti = Math.sin(ang) > 0;
+    // direzione di marcia per orientare il muso dell'aereo
+    const dx = -Math.sin(ang) * rx, dy = Math.cos(ang) * ry;
+    let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+    // lo sprite "guarda" a destra: quando va verso sinistra lo specchio
+    const versoSx = dx < 0;
+    const scala = davanti ? 1 : 0.62;          // dietro = più piccolo
+    const opac = davanti ? 1 : 0.45;           // dietro = sbiadito
+    const flip = versoSx ? " scaleX(-1)" : "";
+    // se specchiato, l'angolo va ribaltato per non capovolgere il muso
+    const degUsato = versoSx ? -deg : deg;
+    aereo.style.opacity = opac;
+    aereo.style.transform =
+      `translate(${x - 38}px, ${y - 22}px) rotate(${degUsato}deg) scale(${scala})${flip}`;
+    aereoRaf = requestAnimationFrame(passo);
+  }
+  aereoRaf = requestAnimationFrame(passo);
 }
 // Stella cadente: parte da un punto casuale in alto, a intervalli irregolari
 let stellaCadenteTimer = null;
@@ -2137,6 +2196,7 @@ function aggiornaCountdown() {
 function chiudiSplash() {
   if (fcTimer) { clearInterval(fcTimer); fcTimer = null; }
   if (stellaCadenteTimer) { clearTimeout(stellaCadenteTimer); stellaCadenteTimer = null; }
+  if (aereoRaf) { cancelAnimationFrame(aereoRaf); aereoRaf = null; }
   $("splash").classList.add("via"); // dissolvenza morbida
   setTimeout(() => {
     const sp = $("splash"); if (sp) sp.remove();
