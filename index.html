@@ -52,10 +52,13 @@
   @keyframes pulsaScia { 0%,100% { opacity: .25; } 50% { opacity: .7; } }
 
   /* ===== FASE 3: vita ===== */
-  #aereoVolo { position: absolute; z-index: 4; width: 64px; left: 0; top: 0;
-    will-change: transform, opacity; pointer-events: none; opacity: 0;
-    filter: drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
-  #mongolfieraVolo { position: absolute; z-index: 4; width: 58px; left: 7%; top: 17%;
+  /* l'aereo attraversa il cielo alto (non orbita: cosi' non finisce mai sul globo
+     e non serve gestire il "dietro"). Lascia una scia luminosa dietro di se'. */
+  #cieloVolo { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+  #aereoVolo { position: absolute; width: 58px; left: 0; top: 0; opacity: 0;
+    will-change: transform, opacity; filter: drop-shadow(0 4px 9px rgba(0,0,0,.5)); }
+  #sciaCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #mongolfieraVolo { position: absolute; z-index: 4; width: 58px; left: 7%; top: 16%;
     pointer-events: none; filter: drop-shadow(0 6px 13px rgba(0,0,0,.5));
     animation: fluttua 7s ease-in-out infinite; transform-origin: 50% 0%; }
   @keyframes fluttua {
@@ -85,7 +88,7 @@
   .btn-inizia svg { width: 20px; height: 20px; fill: #fff; }
   @media (prefers-reduced-motion: reduce) {
     .stella, .stella.viva, .fc-card.gira, #sfondoSplash, #bagliorescia, #stellaCadente, #mongolfieraVolo { animation: none !important; }
-    #aereoVolo { display: none !important; }
+    #cieloVolo { display: none !important; }
   }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
@@ -344,7 +347,10 @@
   <div id="cieloStelle"></div>
   <div id="stellaCadente"></div>
   <img id="mongolfieraVolo" src="mongolfiera.png" alt="" />
-  <img id="aereoVolo" src="aereo.png" alt="" />
+  <div id="cieloVolo">
+    <canvas id="sciaCanvas"></canvas>
+    <img id="aereoVolo" src="aereo.png" alt="" />
+  </div>
   <div class="splash-testi">
     <div class="eyebrow">Diario di bordo</div>
     <div id="flipNome"></div>
@@ -2095,42 +2101,81 @@ function avviaSplash() {
   aggiornaCountdown();
   fcTimer = setInterval(aggiornaCountdown, 1000);
 }
-// L'aereo orbita lungo l'ellisse della scia (numeri misurati sull'immagine:
-// centro 50%/48%, semiampiezze 46% e 8% -> ellisse schiacciata vista di taglio).
-// Profondità: meta' BASSA = davanti (grande, opaco), meta' ALTA = dietro (piccolo, sbiadito).
-let aereoRaf = null;
+// L'aereo ATTRAVERSA il cielo alto: entra da sinistra, curva morbida sopra i monumenti,
+// esce a destra; poi pausa e riparte. Niente orbita sul globo -> niente problema "dietro",
+// e funziona su qualunque schermo perche' entra/esce fuori bordo.
+let aereoRaf = null, aereoT0 = 0, aereoInPausa = false;
 function avviaAereo() {
-  const aereo = $("aereoVolo");
-  const splash = $("splash");
-  if (!aereo || !splash) return;
+  const cielo = $("cieloVolo"), aereo = $("aereoVolo"), cv = $("sciaCanvas");
+  if (!cielo || !aereo || !cv) return;
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    aereo.style.display = "none"; return;
+    cielo.style.display = "none"; return;
   }
-  const t0 = performance.now();
-  const giroMs = 16000;
+  const ctx = cv.getContext("2d");
+  function dim() {
+    const r = cielo.getBoundingClientRect();
+    cv.width = r.width; cv.height = r.height;
+    return r;
+  }
+  let R = dim();
+  const voloMs = 7000;     // durata di un attraversamento
+  const pausaMs = 4500;    // pausa di cielo vuoto tra un volo e l'altro
+  const scia = [];         // punti della scia luminosa {x,y,vita}
+  aereoT0 = performance.now();
+
+  // la traiettoria: una curva morbida nel cielo alto, sopra i monumenti
+  function punto(p, W, H) {
+    const x = -0.12 * W + p * 1.24 * W;            // da fuori-sx a fuori-dx
+    const y = H * 0.20 - Math.sin(p * Math.PI) * H * 0.05; // arco dolce verso l'alto
+    return { x, y };
+  }
+
   function passo(ora) {
-    const r = splash.getBoundingClientRect();
-    const W = r.width, H = r.height;
-    const cx = W * 0.50, cy = H * 0.478;     // centro orbita = centro scia misurato
-    const rx = W * 0.45, ry = H * 0.085;     // ellisse schiacciata come la scia reale
-    const ang = ((ora - t0) % giroMs) / giroMs * Math.PI * 2;
-    const x = cx + Math.cos(ang) * rx;
-    const y = cy + Math.sin(ang) * ry;
-    const davanti = Math.sin(ang) > 0;       // meta' bassa dell'ellisse
-    // angolo della tangente (verso di marcia)
-    const tdx = -Math.sin(ang) * rx, tdy = Math.cos(ang) * ry;
-    // lo sprite guarda a DESTRA. Calcolo l'angolo e, se va verso sinistra,
-    // ribalto orizzontalmente E aggiungo 180 alla rotazione: cosi' il muso
-    // resta sempre in avanti senza capovolgersi.
-    let deg = Math.atan2(tdy, tdx) * 180 / Math.PI;
-    const versoSx = tdx < 0;
-    let flip = "";
-    if (versoSx) { deg = deg + 180; flip = " scaleY(-1)"; }
-    const scala = davanti ? 1 : 0.6;
-    const opac = davanti ? 1 : 0.4;
-    aereo.style.opacity = opac;
-    aereo.style.transform =
-      `translate(${x - 32}px, ${y - 16}px) rotate(${deg}deg)${flip} scale(${scala})`;
+    R = (cv.width !== cielo.getBoundingClientRect().width) ? dim() : cielo.getBoundingClientRect();
+    const W = cv.width, H = cv.height;
+    const ciclo = voloMs + pausaMs;
+    const dt = (ora - aereoT0) % ciclo;
+    ctx.clearRect(0, 0, W, H);
+
+    if (dt < voloMs) {
+      const p = dt / voloMs;
+      const cur = punto(p, W, H);
+      const prev = punto(Math.max(0, p - 0.012), W, H);
+      // aggiungo un punto di scia
+      scia.push({ x: cur.x, y: cur.y, vita: 1 });
+      // disegno la scia (dietro l'aereo), che sfuma col tempo
+      for (let i = 0; i < scia.length; i++) {
+        const s = scia[i]; s.vita -= 0.018;
+      }
+      while (scia.length && scia[0].vita <= 0) scia.shift();
+      if (scia.length > 1) {
+        for (let i = 1; i < scia.length; i++) {
+          const s0 = scia[i - 1], s1 = scia[i];
+          ctx.strokeStyle = `rgba(174,224,255,${Math.max(0, s1.vita) * 0.7})`;
+          ctx.lineWidth = Math.max(0.5, s1.vita * 3);
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke();
+        }
+      }
+      // angolo del muso lungo la curva
+      const deg = Math.atan2(cur.y - prev.y, cur.x - prev.x) * 180 / Math.PI;
+      aereo.style.opacity = 1;
+      aereo.style.transform = `translate(${cur.x - 29}px, ${cur.y - 16}px) rotate(${deg}deg)`;
+    } else {
+      // pausa: aereo fuori scena, la scia residua sfuma
+      aereo.style.opacity = 0;
+      for (let i = 0; i < scia.length; i++) scia[i].vita -= 0.04;
+      while (scia.length && scia[0].vita <= 0) scia.shift();
+      if (scia.length > 1) {
+        for (let i = 1; i < scia.length; i++) {
+          const s0 = scia[i - 1], s1 = scia[i];
+          ctx.strokeStyle = `rgba(174,224,255,${Math.max(0, s1.vita) * 0.7})`;
+          ctx.lineWidth = Math.max(0.5, s1.vita * 3);
+          ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke();
+        }
+      }
+    }
     aereoRaf = requestAnimationFrame(passo);
   }
   aereoRaf = requestAnimationFrame(passo);
