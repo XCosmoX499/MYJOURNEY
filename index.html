@@ -52,17 +52,15 @@
   @keyframes pulsaScia { 0%,100% { opacity: .25; } 50% { opacity: .7; } }
 
   /* ===== FASE 3: vita ===== */
-  /* l'aereo vola: lo muovo via JS lungo l'orbita; qui solo lo stile di base */
-  #aereoVolo { position: absolute; z-index: 4; width: 76px; left: 0; top: 0;
-    will-change: transform, opacity; pointer-events: none;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
-  /* la mongolfiera fluttua dolcemente in alto a sinistra, nel cielo libero */
-  #mongolfieraVolo { position: absolute; z-index: 4; width: 66px; left: 8%; top: 20%;
-    pointer-events: none; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5));
+  #aereoVolo { position: absolute; z-index: 4; width: 64px; left: 0; top: 0;
+    will-change: transform, opacity; pointer-events: none; opacity: 0;
+    filter: drop-shadow(0 4px 9px rgba(0,0,0,.45)); }
+  #mongolfieraVolo { position: absolute; z-index: 4; width: 58px; left: 7%; top: 17%;
+    pointer-events: none; filter: drop-shadow(0 6px 13px rgba(0,0,0,.5));
     animation: fluttua 7s ease-in-out infinite; transform-origin: 50% 0%; }
   @keyframes fluttua {
     0%, 100% { transform: translateY(0) rotate(-2deg); }
-    50% { transform: translateY(-16px) rotate(2deg); }
+    50% { transform: translateY(-15px) rotate(2deg); }
   }
   /* i testi e l'orologio vivono nel cielo basso lasciato libero dall'immagine */
   .splash-testi { position: absolute; left: 0; right: 0; bottom: calc(40px + env(safe-area-inset-bottom, 0px));
@@ -2097,9 +2095,9 @@ function avviaSplash() {
   aggiornaCountdown();
   fcTimer = setInterval(aggiornaCountdown, 1000);
 }
-// L'aereo orbita lungo l'ellisse della scia attorno al globo.
-// Trucco di profondità: nella metà ALTA dell'orbita passa "dietro" il globo
-// (più piccolo e sbiadito), nella metà BASSA passa "davanti" (pieno e grande).
+// L'aereo orbita lungo l'ellisse della scia (numeri misurati sull'immagine:
+// centro 50%/48%, semiampiezze 46% e 8% -> ellisse schiacciata vista di taglio).
+// Profondità: meta' BASSA = davanti (grande, opaco), meta' ALTA = dietro (piccolo, sbiadito).
 let aereoRaf = null;
 function avviaAereo() {
   const aereo = $("aereoVolo");
@@ -2109,31 +2107,30 @@ function avviaAereo() {
     aereo.style.display = "none"; return;
   }
   const t0 = performance.now();
-  const giroMs = 14000; // un giro completo in 14 secondi
+  const giroMs = 16000;
   function passo(ora) {
     const r = splash.getBoundingClientRect();
     const W = r.width, H = r.height;
-    // centro ed ampiezza dell'ellisse, in proporzione all'immagine (il globo sta in alto)
-    const cx = W * 0.50, cy = H * 0.455;
-    const rx = W * 0.46, ry = H * 0.135;
+    const cx = W * 0.50, cy = H * 0.478;     // centro orbita = centro scia misurato
+    const rx = W * 0.45, ry = H * 0.085;     // ellisse schiacciata come la scia reale
     const ang = ((ora - t0) % giroMs) / giroMs * Math.PI * 2;
-    // parte da sinistra e gira; sin>0 = metà bassa (davanti)
     const x = cx + Math.cos(ang) * rx;
     const y = cy + Math.sin(ang) * ry;
-    const davanti = Math.sin(ang) > 0;
-    // direzione di marcia per orientare il muso dell'aereo
-    const dx = -Math.sin(ang) * rx, dy = Math.cos(ang) * ry;
-    let deg = Math.atan2(dy, dx) * 180 / Math.PI;
-    // lo sprite "guarda" a destra: quando va verso sinistra lo specchio
-    const versoSx = dx < 0;
-    const scala = davanti ? 1 : 0.62;          // dietro = più piccolo
-    const opac = davanti ? 1 : 0.45;           // dietro = sbiadito
-    const flip = versoSx ? " scaleX(-1)" : "";
-    // se specchiato, l'angolo va ribaltato per non capovolgere il muso
-    const degUsato = versoSx ? -deg : deg;
+    const davanti = Math.sin(ang) > 0;       // meta' bassa dell'ellisse
+    // angolo della tangente (verso di marcia)
+    const tdx = -Math.sin(ang) * rx, tdy = Math.cos(ang) * ry;
+    // lo sprite guarda a DESTRA. Calcolo l'angolo e, se va verso sinistra,
+    // ribalto orizzontalmente E aggiungo 180 alla rotazione: cosi' il muso
+    // resta sempre in avanti senza capovolgersi.
+    let deg = Math.atan2(tdy, tdx) * 180 / Math.PI;
+    const versoSx = tdx < 0;
+    let flip = "";
+    if (versoSx) { deg = deg + 180; flip = " scaleY(-1)"; }
+    const scala = davanti ? 1 : 0.6;
+    const opac = davanti ? 1 : 0.4;
     aereo.style.opacity = opac;
     aereo.style.transform =
-      `translate(${x - 38}px, ${y - 22}px) rotate(${degUsato}deg) scale(${scala})${flip}`;
+      `translate(${x - 32}px, ${y - 16}px) rotate(${deg}deg)${flip} scale(${scala})`;
     aereoRaf = requestAnimationFrame(passo);
   }
   aereoRaf = requestAnimationFrame(passo);
