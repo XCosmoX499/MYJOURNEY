@@ -15,18 +15,18 @@
 
   /* ===== SPLASH ===== */
   #splash { position: fixed; inset: 0; z-index: 200; overflow: hidden; transition: opacity .8s ease;
-    background: radial-gradient(ellipse at 50% 28%, #14264d 0%, #0a1228 52%, #05080F 100%); }
+    background: #05080F center top / cover no-repeat; }
   #splash.via { opacity: 0; pointer-events: none; }
-  #cieloStelle { position: absolute; inset: 0; pointer-events: none; }
+  /* lo sfondo vero e proprio: l'immagine del pianeta, a tutto schermo */
+  #sfondoSplash { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center top; z-index: 0; }
+  #cieloStelle { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
   .stella { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff;
     opacity: .15; animation: brilla 3s ease-in-out infinite; }
   @keyframes brilla { 50% { opacity: .85; } }
-  .scena-globo { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-    width: min(78vw, 330px); height: min(78vw, 330px); }
-  #globoSplash { position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
-    box-shadow: 0 0 70px rgba(94,141,210,.5), 0 0 0 1px #9cc3ff33; background: #0a1228; }
-  #globoSplash .mapboxgl-canvas { border-radius: 50%; }
-  .splash-testi { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
+  /* i testi e l'orologio vivono nel cielo basso lasciato libero dall'immagine */
+  .splash-testi { position: absolute; left: 0; right: 0; bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
   .splash-testi .eyebrow { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: .6; }
   #flipNome { font-family: 'Caveat', cursive; font-size: 34px; margin-top: 4px; color: #fff;
     text-shadow: 0 2px 16px rgba(0,0,0,.6); min-height: 40px; }
@@ -42,8 +42,9 @@
   .fc-eti { margin-top: 6px; font-size: 9px; letter-spacing: 2.5px; color: #C9A227; text-transform: uppercase; font-weight: 700; }
   .fc-incorso { margin-top: 14px; font-size: 30px; font-weight: 800; color: #fff; }
   .fc-incorso small { display: block; font-size: 13px; font-weight: 400; color: #C9A227; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
-  .btn-inizia { display: block; margin: 20px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
-    padding: 15px 44px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.4); }
+  .btn-inizia { display: inline-flex; align-items: center; gap: 9px; margin: 20px auto 0; background: #E4572E; color: #fff; border: none; border-radius: 999px;
+    padding: 15px 40px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.45); }
+  .btn-inizia svg { width: 20px; height: 20px; fill: #fff; }
   @media (prefers-reduced-motion: reduce) { .stella, .fc-card.gira { animation: none !important; } }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
@@ -297,8 +298,8 @@
 
 <!-- ===== SPLASH ===== -->
 <div id="splash">
+  <img id="sfondoSplash" src="sfondo.jpg" alt="" />
   <div id="cieloStelle"></div>
-  <div class="scena-globo"><div id="globoSplash"></div></div>
   <div class="splash-testi">
     <div class="eyebrow">Diario di bordo</div>
     <div id="flipNome"></div>
@@ -309,7 +310,7 @@
       <div class="fc-unita"><div class="fc-card" id="cardS">00</div><div class="fc-eti">Secondi</div></div>
     </div>
     <div class="fc-incorso nascosto" id="fcInCorso"></div>
-    <button class="btn-inizia" id="btnInizia">Inizia il viaggio</button>
+    <button class="btn-inizia" id="btnInizia"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>Inizia il viaggio</button>
   </div>
 </div>
 
@@ -2045,29 +2046,6 @@ function avviaSplash() {
   }
   aggiornaCountdown();
   fcTimer = setInterval(aggiornaCountdown, 1000);
-  avviaGloboSplash();
-}
-// Globo satellitare Mapbox che ruota lentamente (sull'anteprima in chat resta il cielo stellato)
-let globoSplash = null, globoRaf = null;
-function avviaGloboSplash() {
-  if (!tokenValido() || !mapboxDisponibile()) return;
-  try {
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    globoSplash = new mapboxgl.Map({
-      container: "globoSplash",
-      style: "mapbox://styles/mapbox/standard-satellite",
-      projection: "globe",
-      center: [15, 18], zoom: 0.85,
-      interactive: false, attributionControl: false,
-    });
-    let lng = 15;
-    const gira = () => {
-      lng = (lng + 0.045) % 360;
-      try { globoSplash.setCenter([lng, 18]); } catch {}
-      globoRaf = requestAnimationFrame(gira);
-    };
-    globoSplash.on("load", gira);
-  } catch {}
 }
 function setCifra(idCard, val) {
   const card = $(idCard);
@@ -2109,10 +2087,8 @@ function aggiornaCountdown() {
 }
 function chiudiSplash() {
   if (fcTimer) { clearInterval(fcTimer); fcTimer = null; }
-  if (globoRaf) cancelAnimationFrame(globoRaf);
   $("splash").classList.add("via"); // dissolvenza morbida
   setTimeout(() => {
-    if (globoSplash) { try { globoSplash.remove(); } catch {} globoSplash = null; }
     const sp = $("splash"); if (sp) sp.remove();
   }, 850);
 }
