@@ -341,6 +341,36 @@
   .biglietto .info span { font-size: 12px; color: #a8a29e; }
   .biglietto button { background: none; border: none; font-size: 17px; padding: 6px; color: #78716c; }
 
+  /* Scheda Valigia / Da non dimenticare */
+  .valigia-sez { margin-bottom: 18px; }
+  .valigia-sez h2 { font-size: 15px; color: #1c1917; margin: 4px 2px 10px; display: flex; align-items: center; gap: 7px; }
+  .check-riga { display: flex; align-items: center; gap: 11px; background: #fff; border: 1px solid #e7e5e4;
+    border-radius: 12px; padding: 12px 13px; margin-bottom: 7px; }
+  .check-riga .spunta { background: none; border: 2px solid #2A9D8F; border-radius: 6px; width: 23px; height: 23px;
+    font-size: 14px; line-height: 1; color: #2A9D8F; padding: 0; flex: none; }
+  .check-riga.fatta .spunta { background: #2A9D8F; color: #fff; }
+  .check-riga .testo { flex: 1; font-size: 14.5px; color: #1c1917; }
+  .check-riga.fatta .testo { text-decoration: line-through; color: #a8a29e; }
+  .check-riga .x { background: none; border: none; color: #d6d3d1; font-size: 17px; padding: 0 2px; flex: none; }
+  .valigia-aggiungi { display: flex; gap: 8px; margin-top: 4px; }
+  .valigia-aggiungi input { flex: 1; border: 1px solid #d6d3d1; border-radius: 10px; padding: 11px; font-size: 14px; -webkit-appearance: none; }
+  .valigia-aggiungi button { background: #1c1917; color: #fff; border: none; border-radius: 10px; width: 46px; font-size: 20px; flex: none; }
+
+  /* Schermata Importa da AI */
+  .importa-passi { counter-reset: passo; margin: 8px 0 14px; }
+  .importa-passo { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .importa-passo::before { counter-increment: passo; content: counter(passo);
+    flex: none; width: 27px; height: 27px; border-radius: 50%; background: #E4572E; color: #fff;
+    font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .importa-passo div { font-size: 14px; color: #44403c; line-height: 1.45; padding-top: 3px; }
+  .importa-passo b { color: #1c1917; }
+  #importaTesto { width: 100%; min-height: 130px; border: 1.5px solid #d6d3d1; border-radius: 12px;
+    padding: 12px; font-size: 13px; font-family: ui-monospace, monospace; resize: vertical; -webkit-appearance: none; }
+  .copia-prompt { width: 100%; background: #2A9D8F; color: #fff; border: none; border-radius: 12px;
+    padding: 13px; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .btn-importa-home { background: #fff; color: #E4572E; border: 1.5px solid #E4572E; border-radius: 999px;
+    padding: 14px 22px; font-size: 15px; font-weight: 700; }
+
   /* Visore foto / album */
   .visore { position: fixed; inset: 0; background: rgba(0,0,0,.94); z-index: 100;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
@@ -382,6 +412,9 @@
     <div class="date">Tocca un viaggio per aprirlo</div>
   </header>
   <main id="listaViaggi"></main>
+  <div style="padding: 0 16px 16px; text-align:center">
+    <button class="btn-importa-home" id="btnImportaHome">✨ Importa viaggio da AI</button>
+  </div>
 </div>
 
 <!-- ===== VIAGGIO ===== -->
@@ -404,6 +437,7 @@
     <button class="tab" data-vista="budget">💰 Budget</button>
     <button class="tab" data-vista="foto">📷 Foto</button>
     <button class="tab" data-vista="biglietti">🎫 Biglietti</button>
+    <button class="tab" data-vista="valigia">🎒 Valigia</button>
   </div>
   <main id="vistaItinerario"></main>
   <main id="vistaBudget" class="nascosto"></main>
@@ -444,6 +478,24 @@
     </div>
     <div id="listaBiglietti"></div>
   </main>
+  <main id="vistaValigia" class="nascosto">
+    <div class="valigia-sez">
+      <h2>🎒 In valigia</h2>
+      <div id="listaValigia"></div>
+      <div class="valigia-aggiungi">
+        <input id="valigiaTesto" placeholder="Aggiungi una cosa da portare..." enterkeyhint="done" />
+        <button id="valigiaAggiungi" title="Aggiungi">+</button>
+      </div>
+    </div>
+    <div class="valigia-sez">
+      <h2>📋 Da non dimenticare</h2>
+      <div id="listaPromemoria"></div>
+      <div class="valigia-aggiungi">
+        <input id="promemoriaTesto" placeholder="Aggiungi un promemoria..." enterkeyhint="done" />
+        <button id="promemoriaAggiungi" title="Aggiungi">+</button>
+      </div>
+    </div>
+  </main>
   <main id="vistaDafare" class="nascosto">
     <div id="quaderno">
       <div class="q-titolo">Le mie imperdibili ✨</div>
@@ -459,6 +511,26 @@
 </div>
 
 <button class="fab" id="fab">+ Nuovo viaggio</button>
+
+<!-- ===== MODALE IMPORTA DA AI ===== -->
+<div class="velo" id="veloImporta">
+  <div class="modale">
+    <h3>✨ Crea un viaggio con l'AI</h3>
+    <div class="importa-passi">
+      <div class="importa-passo"><div>Copia il prompt qui sotto col pulsante verde.</div></div>
+      <div class="importa-passo"><div>Incollalo nella <b>tua app di AI</b> preferita (ChatGPT, Gemini, Claude…).</div></div>
+      <div class="importa-passo"><div>Rispondi alle domande e <b>accetta</b> il pacchetto viaggio.</div></div>
+      <div class="importa-passo"><div>Incolla qui sotto il <b>pacchetto</b> che ti consegna e premi Crea.</div></div>
+    </div>
+    <button class="copia-prompt" id="copiaPrompt">📋 Copia il prompt per l'AI</button>
+    <div class="sub" style="text-align:center;margin-bottom:12px;font-size:12px">Poi incolla qui il pacchetto ricevuto:</div>
+    <textarea id="importaTesto" placeholder="Incolla qui il pacchetto viaggio che ti ha dato l'AI..."></textarea>
+    <div class="azioni">
+      <button id="importaAnnulla">Annulla</button>
+      <button class="salva" id="importaCrea">Crea viaggio</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== MODALE VIAGGIO ===== -->
 <div class="velo" id="veloViaggio">
@@ -666,8 +738,73 @@
 
 <script>
 // ⬇️⬇️ TOKEN MAPBOX ⬇️⬇️
-const MAPBOX_TOKEN = "pk.eyJ1IjoieGNvc21veCIsImEiOiJjbXE5NHhuaTQwZ3pmMnFzN3N2dGc0YXdnIn0.uW4MNFKEE85ndhKNLU0-5w";
+const MAPBOX_TOKEN = "pk.eyJ1IjoieGNvc21veCIsImEiOiJjbXFjd2pzZHYwZjB0MnFyOG03cTA4ZXZzIn0.I8FKfkbsa_1A5bZbz4PUEw";
 // ⬆️⬆️ ============== ⬆️⬆️
+const PROMPT_AI = `Sei un travel planner d'élite: l'equivalente del miglior agente di viaggi su piazza, di quelli che con poche domande capiscono chi hai davanti e ti costruiscono il viaggio perfetto. Da questo momento reciti questo ruolo per l'intera conversazione.
+
+Parli alla persona dandole del "tu", ma mantieni sempre un assetto professionale: sei cordiale come un concierge di un grande albergo, mai sciatto, mai eccessivamente confidenziale.
+
+REGOLA D'ORO: ogni suggerimento è tagliato su misura della persona reale che hai davanti. Niente stereotipi, niente regole rigide per categoria: la stessa caratteristica (età, condizione fisica, composizione del gruppo) può significare cose opposte in persone diverse. Incroci sempre le informazioni — chi viaggia, perché, con chi, in che condizioni, con quali desideri — e se un dato è ambiguo, chiedi. Capisci il cliente prima che si esprima del tutto, ma non dare nulla per scontato per pregiudizio.
+
+RAPPORTO COL CLIENTE: il cliente ha l'ultima parola e tu lo assecondi. Però se una sua scelta ha possibili criticità, glielo fai notare con tatto PRIMA (non per contraddirlo, ma per fargli scegliere informato); poi qualunque cosa decida la rispetti e arricchisci la sua scelta con un consiglio intelligente. Consigli, poi assecondi. Mai imporsi, mai sottomettersi in silenzio.
+
+COME COMINCI: la tua prima mossa è capire CHE TIPO di aiuto serve. Apri così e poi ascolta: «Ciao, sono il tuo travel planner. Dimmi pure: vuoi che ti organizzi un viaggio completo dalla A alla Z, oppure cerchi un consiglio su qualcosa di preciso — dove mangiare, cosa fare, quali esperienze non perdere?»
+
+Poi ti comporti in uno di tre modi:
+- CONSIGLIO AL VOLO (richiesta singola): tono più colloquiale, pochissime domande mirate, rispondi a voce. Niente pacchetto finale.
+- UN CAPITOLO (un insieme: solo i pasti, solo le esperienze…): tono professionale, domande pertinenti a quel capitolo, e alla fine consegni il pacchetto viaggio (vedi sotto).
+- VIAGGIO COMPLETO (A-Z): conduci un vero colloquio approfondito, una domanda alla volta, e alla fine consegni il pacchetto completo.
+
+IL FLUSSO DEL VIAGGIO COMPLETO, in quattro fasi:
+FASE 1 — CONOSCERE: scopri il viaggiatore (passioni, aspettative, intenzioni, necessità personali e familiari). Questa fase non entra nel pacchetto: ti serve per fare bene tutto il resto.
+FASE 2 — ORGANIZZARE: con ciò che hai capito, costruisci il viaggio giorno per giorno. Tu proponi e consigli, il cliente resta padrone delle scelte. → finirà nell'ITINERARIO.
+FASE 3 — ARRICCHIRE: DOPO aver organizzato, proponi una serie di esperienze/eventi bonus, i consigli di chi ha già vissuto un viaggio simile. Per ognuno il viaggiatore dice sì o no. Solo i SÌ entrano. → finiranno nelle IMPERDIBILI.
+FASE 4 — PRATICA: infine, cosa portare e cosa non dimenticare mai. → finiranno in VALIGIA e PROMEMORIA.
+
+I TEMI DA ESPLORARE (nel viaggio completo li copri tutti; nei capitoli solo i pertinenti):
+1. CHI VIAGGIA (quante persone, età, rapporti, individualità — senza incasellare).
+2. DESIDERI E MUST-HAVE: chiedi PRESTO se ha già qualcosa che vuole assolutamente fare; sono i punti fermi attorno a cui costruisci, e li collochi con criterio (tempo che richiedono, prenotazioni, posizione, cosa mettergli vicino).
+3. QUANDO E PER QUANTO (date, durata, stagione).
+4. SCOPO/ANIMA del viaggio (è il filtro di ogni consiglio).
+5. SALUTE E ACCESSIBILITÀ (allergie, intolleranze, farmaci, mobilità). Filtra le proposte senza stereotipi. IMPORTANTE: raccogli e dai indicazioni generali, ma raccomanda SEMPRE di verificare con un medico/professionista e di controllare di persona accessibilità e assistenza sanitaria sul posto. Non sostituirti a un medico.
+6. CUCINA (immergersi nel locale o restare sui sapori di casa? Filtra per le esigenze alimentari di sopra).
+7. DOCUMENTI (passaporto, visti, autorizzazioni, vaccinazioni). Invita SEMPRE a verificare i requisiti aggiornati sui canali ufficiali.
+8. DENARO (non gestisci prenotazioni né budget; dai dritte per risparmiare e consigli su carta/contante/cambio).
+9. CONNETTIVITÀ E LOGISTICA (come arrivare, muoversi, SIM/eSIM).
+10. DA NON DIMENTICARE: una checklist su misura incrociando i dati (documenti, adattatori, protezioni, oggetti per bambini/animali…).
+
+IL RITMO non lo chiedi: lo deduci incrociando età, scopo, compagnia, condizioni.
+
+═══════ COME CONSEGNI IL PACCHETTO FINALE ═══════
+Quando hai finito (nei modi "capitolo" e "completo"), oltre a presentare il viaggio a parole, consegni UN UNICO blocco di testo che l'utente incollerà nella sua app. Prima scrivi: «Ecco il tuo pacchetto viaggio pronto. Copialo tutto, torna nella tua app e incollalo nella sezione Importa: il tuo viaggio si creerà da solo.» Poi racchiudi il pacchetto tra due righe di tre trattini.
+
+FORMATO DEL PACCHETTO (semplice: ogni riga è ETICHETTA | campi separati da |). Sezioni in quest'ordine:
+
+### VIAGGIO ###
+NOME | <nome del viaggio>
+DAL | <AAAA-MM-GG>
+AL | <AAAA-MM-GG>
+PERSONE | <numero>
+
+### ITINERARIO ###
+(una riga per tappa)
+GIORNO <n> | <titolo> | <tipo> | <ora> | <luogo>
+- tipo = una parola tra: attivita / ristorante / hotel / volo / treno (se incerto: attivita)
+- ora = formato OO:MM, oppure — se non rilevante
+- luogo = nome del posto + città (es. "Torre Eiffel, Parigi"). NON mettere coordinate: le trova la app.
+
+### IMPERDIBILI ###
+(solo i bonus accettati dal viaggiatore, una riga ciascuno)
+IMPERDIBILE | <consiglio d'esperienza>
+
+### VALIGIA ###
+VALIGIA | <cosa portare>
+
+### PROMEMORIA ###
+PROMEMORIA | <cosa fare prima di partire>
+
+REGOLE PER NON SBAGLIARE: una voce per riga; mai andare a capo dentro una voce; usa sempre |; dentro il pacchetto NON scrivere altro (commenti, spiegazioni); valigia e promemoria su misura del viaggio; se una sezione è vuota, omettila. Le date in formato AAAA-MM-GG.`;
+
 
 // ============ COSTANTI E STATO ============
 const TIPI = {
@@ -898,7 +1035,7 @@ function renderViaggio() {
   const s = statoViaggio(corrente);
   $("countdown").textContent = s.testo;
   $("countdown").className = "countdown " + s.classe;
-  renderItinerario(); renderBudget(); renderMappa(); renderFoto(); renderBiglietti(); renderDafare();
+  renderItinerario(); renderBudget(); renderMappa(); renderFoto(); renderBiglietti(); renderValigia(); renderDafare();
 }
 let giornoAperto = null;
 function renderItinerario() {
@@ -2066,6 +2203,165 @@ $("fileEsperienza").addEventListener("change", async (e) => {
   }
 });
 
+// ============ VALIGIA / DA NON DIMENTICARE ============
+function renderValigia() {
+  corrente.valigia = corrente.valigia || [];
+  corrente.promemoria = corrente.promemoria || [];
+  renderChecklist("listaValigia", corrente.valigia);
+  renderChecklist("listaPromemoria", corrente.promemoria);
+}
+function renderChecklist(contId, lista) {
+  const cont = $(contId); cont.innerHTML = "";
+  if (!lista.length) {
+    cont.innerHTML = '<div class="vuoto" style="padding:8px 2px">Niente qui ancora.</div>';
+    return;
+  }
+  const ordinata = [...lista].sort((a, b) => (a.fatto === b.fatto ? 0 : a.fatto ? 1 : -1));
+  for (const v of ordinata) {
+    const riga = document.createElement("div");
+    riga.className = "check-riga" + (v.fatto ? " fatta" : "");
+    riga.innerHTML = `<button class="spunta">${v.fatto ? "✓" : ""}</button><div class="testo">${v.testo}</div><button class="x">✕</button>`;
+    riga.querySelector(".spunta").addEventListener("click", () => { v.fatto = !v.fatto; salva(); renderValigia(); });
+    riga.querySelector(".x").addEventListener("click", () => {
+      const arr = contId === "listaValigia" ? corrente.valigia : corrente.promemoria;
+      const i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1);
+      salva(); renderValigia();
+    });
+    cont.appendChild(riga);
+  }
+}
+function aggiungiCheck(inputId, quale) {
+  const testo = $(inputId).value.trim();
+  if (!testo) return;
+  const arr = quale === "valigia" ? (corrente.valigia = corrente.valigia || []) : (corrente.promemoria = corrente.promemoria || []);
+  arr.push({ testo, fatto: false });
+  $(inputId).value = "";
+  salva(); renderValigia();
+}
+$("valigiaAggiungi").addEventListener("click", () => aggiungiCheck("valigiaTesto", "valigia"));
+$("promemoriaAggiungi").addEventListener("click", () => aggiungiCheck("promemoriaTesto", "promemoria"));
+$("valigiaTesto").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); aggiungiCheck("valigiaTesto", "valigia"); } });
+$("promemoriaTesto").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); aggiungiCheck("promemoriaTesto", "promemoria"); } });
+
+// ============ IMPORTA DA AI (la "dogana" che perdona) ============
+// Legge il pacchetto testuale dell'AI. Filosofia: importa tutto il salvabile,
+// scarta con grazia le righe irrecuperabili, non si blocca mai.
+function importaPacchetto(testo) {
+  const righe = String(testo).split(/\r?\n/);
+  const out = { nome: "", dal: "", al: "", persone: 1, itinerario: [], imperdibili: [], valigia: [], promemoria: [] };
+  const scartate = [];
+  const senzaAcc = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  const TIPI_VALIDI = ["volo", "treno", "hotel", "attivita", "ristorante"];
+  for (const raw of righe) {
+    const riga = raw.trim();
+    if (!riga || riga.startsWith("#") || riga.startsWith("---")) continue;
+    const parti = riga.split("|").map((p) => p.trim());
+    const et = senzaAcc(parti[0]);
+    try {
+      if (et === "NOME") out.nome = parti.slice(1).join(" ").trim();
+      else if (et === "DAL") out.dal = (parti[1] || "").trim();
+      else if (et === "AL") out.al = (parti[1] || "").trim();
+      else if (et === "PERSONE") { const n = parseInt(parti[1]); if (n > 0) out.persone = n; }
+      else if (et.startsWith("GIORNO")) {
+        const numGiorno = parseInt(et.replace(/[^0-9]/g, "")) || 1;
+        const titolo = parti[1] || "";
+        let tipo = senzaAcc(parti[2] || "").toLowerCase();
+        if (!TIPI_VALIDI.includes(tipo)) tipo = "attivita";
+        let ora = (parti[3] || "").trim();
+        if (!/^\d{1,2}:\d{2}$/.test(ora)) ora = "—";
+        const luogo = parti[4] || "";
+        if (!titolo) { scartate.push(riga); continue; }
+        out.itinerario.push({ giorno: numGiorno, titolo, tipo, ora, luogo });
+      }
+      else if (et === "IMPERDIBILE") { const t = parti.slice(1).join(" ").trim(); t ? out.imperdibili.push(t) : scartate.push(riga); }
+      else if (et === "VALIGIA") { const t = parti.slice(1).join(" ").trim(); t ? out.valigia.push(t) : scartate.push(riga); }
+      else if (et === "PROMEMORIA") { const t = parti.slice(1).join(" ").trim(); t ? out.promemoria.push(t) : scartate.push(riga); }
+      else scartate.push(riga);
+    } catch (e) { scartate.push(riga); }
+  }
+  return { out, scartate };
+}
+
+// Trasforma il risultato della dogana in un VERO viaggio dell'app
+function creaViaggioDaPacchetto(p) {
+  // date: se mancano o sono malfatte, uso oggi + durata dedotta dai giorni
+  const oggi = oggiISO();
+  let inizio = /^\d{4}-\d{2}-\d{2}$/.test(p.dal) ? p.dal : oggi;
+  const giorniMax = p.itinerario.reduce((m, t) => Math.max(m, t.giorno), 1);
+  let fine = /^\d{4}-\d{2}-\d{2}$/.test(p.al) ? p.al : "";
+  if (!fine || fine < inizio) {
+    const d = new Date(inizio + "T12:00:00");
+    d.setDate(d.getDate() + Math.max(0, giorniMax - 1));
+    fine = d.toISOString().slice(0, 10);
+  }
+  const persone = p.persone > 0 ? p.persone : 1;
+  const nomi = persone > 1 ? Array.from({ length: persone }, (_, i) => "Viaggiatore " + (i + 1)) : ["Io"];
+  const giorni = rangeGiorni(inizio, fine);
+  // distribuisco le tappe nei giorni (giorno 1 = primo giorno)
+  for (const t of p.itinerario) {
+    const idx = Math.min(giorni.length - 1, Math.max(0, t.giorno - 1));
+    giorni[idx].tappe.push({
+      id: Date.now() + Math.random(),
+      tipo: t.tipo, ora: t.ora, oraArrivo: "",
+      luogo: t.luogo, coord: null,
+      luogoDa: "", luogoA: "", coordDa: null, coordA: null,
+      titolo: t.titolo, costo: 0, pagatori: [],
+    });
+  }
+  const daFare = p.imperdibili.map((t) => ({ id: Date.now() + Math.random(), testo: t, fatto: false, voto: 0, fotoId: null }));
+  const valigia = p.valigia.map((t) => ({ testo: t, fatto: false }));
+  const promemoria = p.promemoria.map((t) => ({ testo: t, fatto: false }));
+  const v = {
+    id: Date.now(), nome: p.nome || "Viaggio importato",
+    inizio, fine, persone, nomi, giorni, spese: [],
+    daFare, valigia, promemoria,
+  };
+  return v;
+}
+
+// il geocoding in sottofondo: per ogni tappa importata cerca le coordinate vere
+async function geocodificaViaggio(v) {
+  if (!tokenValido()) return;
+  let cambiato = false;
+  for (const g of v.giorni) for (const t of g.tappe) {
+    if (t.luogo && !t.coord) {
+      const r = await cercaLuoghi(t.luogo, 1);
+      if (r && r[0]) { t.coord = r[0].center; cambiato = true; }
+    }
+  }
+  if (cambiato) { salva(); if (corrente && corrente.id === v.id) renderMappa(); }
+}
+
+$("btnImportaHome").addEventListener("click", () => {
+  $("importaTesto").value = "";
+  $("veloImporta").classList.add("aperto");
+});
+$("importaAnnulla").addEventListener("click", () => $("veloImporta").classList.remove("aperto"));
+$("copiaPrompt").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(PROMPT_AI);
+    toast("Prompt copiato! Incollalo nella tua AI.");
+  } catch {
+    // fallback: selezione manuale se la clipboard è negata
+    toast("Copia non riuscita: tieni premuto sul testo per copiarlo a mano.");
+  }
+});
+$("importaCrea").addEventListener("click", async () => {
+  const testo = $("importaTesto").value.trim();
+  if (!testo) return toast("Incolla prima il pacchetto che ti ha dato l'AI.");
+  const { out, scartate } = importaPacchetto(testo);
+  if (!out.itinerario.length && !out.imperdibili.length && !out.valigia.length && !out.promemoria.length) {
+    return toast("Non ho riconosciuto un pacchetto valido. Controlla di aver copiato tutto.");
+  }
+  const v = creaViaggioDaPacchetto(out);
+  viaggi.push(v); salva();
+  $("veloImporta").classList.remove("aperto");
+  const n = out.itinerario.length + out.imperdibili.length + out.valigia.length + out.promemoria.length;
+  toast(scartate.length ? `Viaggio creato! (${n} voci, ${scartate.length} righe ignorate)` : `Viaggio creato con ${n} voci! ✨`);
+  apriViaggio(v.id);
+  geocodificaViaggio(v); // in sottofondo: trova le posizioni sulla mappa
+});
+
 // ============ NAVIGAZIONE ============
 let vistaAttuale = "itinerario";
 $("btnGlobo").addEventListener("click", () => mostraVista(vistaAttuale === "mappa" ? "itinerario" : "mappa"));
@@ -2075,7 +2371,7 @@ function mostraVista(nome) {
   $("btnGlobo").classList.toggle("attivo", nome === "mappa");
   if (nome === "mappa") setTimeout(() => { if (mappa) try { mappa.resize(); } catch {} }, 80); // il contenitore è cambiato: avviso Mapbox
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("attiva", x.dataset.vista === nome));
-  for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "dafare"]) {
+  for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "valigia", "dafare"]) {
     $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
   }
   $("fab").classList.toggle("nascosto", nome !== "itinerario");
