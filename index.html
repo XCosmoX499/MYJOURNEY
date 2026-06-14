@@ -51,32 +51,6 @@
     animation: pulsaScia 5.5s ease-in-out infinite; }
   @keyframes pulsaScia { 0%,100% { opacity: .25; } 50% { opacity: .7; } }
 
-  /* ===== FASE 3: vita ===== */
-  /* L'aereo sta appoggiato sulla scia davanti al globo. Due movimenti sovrapposti:
-     - galleggio: il contenitore esterno sale/scende lentissimo (sospeso)
-     - vibrazione: l'immagine interna trema appena, come un vero aereo in volo */
-  #aereoVolo { position: absolute; z-index: 4; left: 41%; top: 52%;
-    width: 92px; pointer-events: none;
-    filter: drop-shadow(0 5px 12px rgba(0,0,0,.5));
-    animation: galleggiaAereo 6s ease-in-out infinite; transform-origin: 50% 50%; }
-  #aereoVolo img { display: block; width: 100%;
-    transform: rotate(-9deg);   /* inclinato come se seguisse la scia in discesa */
-    animation: vibraAereo 0.9s ease-in-out infinite; }
-  @keyframes galleggiaAereo {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-13px); }
-  }
-  @keyframes vibraAereo {
-    0%, 100% { transform: rotate(-9deg) translateY(0); }
-    50% { transform: rotate(-8deg) translateY(-1.5px); }
-  }
-  #mongolfieraVolo { position: absolute; z-index: 4; width: 58px; left: 7%; top: 16%;
-    pointer-events: none; filter: drop-shadow(0 6px 13px rgba(0,0,0,.5));
-    animation: fluttua 7s ease-in-out infinite; transform-origin: 50% 0%; }
-  @keyframes fluttua {
-    0%, 100% { transform: translateY(0) rotate(-2deg); }
-    50% { transform: translateY(-15px) rotate(2deg); }
-  }
   /* i testi e l'orologio vivono nel cielo basso lasciato libero dall'immagine */
   .splash-testi { position: absolute; left: 0; right: 0; bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     text-align: center; color: #fff; z-index: 6; padding: 0 20px; }
@@ -99,8 +73,7 @@
     padding: 15px 40px; font-size: 17px; font-weight: 700; box-shadow: 0 8px 26px rgba(228,87,46,.45); }
   .btn-inizia svg { width: 20px; height: 20px; fill: #fff; }
   @media (prefers-reduced-motion: reduce) {
-    .stella, .stella.viva, .fc-card.gira, #sfondoSplash, #bagliorescia, #stellaCadente,
-    #mongolfieraVolo, #aereoVolo, #aereoVolo img { animation: none !important; }
+    .stella, .stella.viva, .fc-card.gira, #sfondoSplash, #bagliorescia, #stellaCadente { animation: none !important; }
   }
 
   /* Pulsanti per scegliere i file (etichette native, affidabili su iOS) */
@@ -388,8 +361,6 @@
   <div id="bagliorescia"></div>
   <div id="cieloStelle"></div>
   <div id="stellaCadente"></div>
-  <img id="mongolfieraVolo" src="mongolfiera.png" alt="" />
-  <div id="aereoVolo"><img src="aereo.png" alt="" /></div>
   <div class="splash-testi">
     <div class="eyebrow">Diario di bordo</div>
     <div id="flipNome"></div>
