@@ -789,9 +789,13 @@ PERSONE | <numero>
 ### ITINERARIO ###
 (una riga per tappa)
 GIORNO <n> | <titolo> | <tipo> | <ora> | <luogo>
+  Esempi:
+  GIORNO 1 | Visita alla Torre | attivita | 10:00 | Torre di Pisa, Pisa, Italia
+  GIORNO 1 | Pranzo tipico | ristorante | 13:00 | —
+  (nel secondo, il ristorante è generico: campo luogo lasciato a trattino, niente punto sulla mappa)
 - tipo = una parola tra: attivita / ristorante / hotel / volo / treno (se incerto: attivita)
 - ora = formato OO:MM, oppure — se non rilevante
-- luogo = nome del posto + città (es. "Torre Eiffel, Parigi"). NON mettere coordinate: le trova la app.
+- luogo: QUESTA È UNA REGOLA IMPORTANTE. Indica il luogo SOLO se è un posto reale e identificabile sulla mappa (un monumento, un museo, una spiaggia con un nome, un indirizzo preciso): scrivi nome del posto + città + nazione (es. "Torre di Pisa, Pisa, Italia"). Se invece il posto è generico o vago ("un ristorante in centro", "una trattoria tipica", "il mercato locale", "dove fare colazione"), NON inventare un luogo: lascia il campo con un trattino —. Nel dubbio, meglio il trattino che un luogo impreciso. La mappa deve contenere solo posti veri e certi. NON mettere mai coordinate: le trova la app dal nome.
 
 ### IMPERDIBILI ###
 (solo i bonus accettati dal viaggiatore, una riga ciascuno)
@@ -2269,7 +2273,9 @@ function importaPacchetto(testo) {
         if (!TIPI_VALIDI.includes(tipo)) tipo = "attivita";
         let ora = (parti[3] || "").trim();
         if (!/^\d{1,2}:\d{2}$/.test(ora)) ora = "—";
-        const luogo = parti[4] || "";
+        let luogo = (parti[4] || "").trim();
+        // luogo vago: l'AI mette un trattino. Lo trattiamo come "nessun luogo": niente punto sulla mappa.
+        if (luogo === "—" || luogo === "-" || /^(nessuno|n\/d|na)$/i.test(luogo)) luogo = "";
         if (!titolo) { scartate.push(riga); continue; }
         out.itinerario.push({ giorno: numGiorno, titolo, tipo, ora, luogo });
       }
