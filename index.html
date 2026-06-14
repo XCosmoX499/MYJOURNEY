@@ -1558,12 +1558,19 @@ $("btnViaggio").addEventListener("click", async () => {
 });
 
 // ===== Ricerca luoghi (geocoding Mapbox) =====
-async function cercaLuoghi(testo, limite) {
+async function cercaLuoghi(testo, limite, assoluto) {
   if (!tokenValido() || !testo) return [];
   try {
-    const nodi = corrente ? nodiRotta() : [];
-    const prossimita = nodi.length ? "&proximity=" + nodi[0].coord.join(",") : "";
-    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(testo)}.json?access_token=${MAPBOX_TOKEN}&limit=${limite || 5}&language=it${prossimita}`);
+    // La prossimità ("cerca vicino a...") aiuta quando aggiungi una tappa a mano,
+    // ma è DANNOSA durante l'import: i luoghi dell'AI sono già completi (nome+città+nazione)
+    // e una tappa sbagliata trascinerebbe le altre nel continente errato.
+    // Con "assoluto=true" la spegniamo e cerchiamo ogni luogo in modo indipendente.
+    let prossimita = "";
+    if (!assoluto && corrente) {
+      const nodi = nodiRotta();
+      if (nodi.length) prossimita = "&proximity=" + nodi[0].coord.join(",");
+    }
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(testo)}.json?access_token=${MAPBOX_TOKEN}&limit=${limite || 5}${prossimita}`);
     const j = await r.json();
     return j.features || [];
   } catch { return []; }
@@ -2302,7 +2309,8 @@ async function geocodificaViaggio(v) {
   let cambiato = false;
   for (const g of v.giorni) for (const t of g.tappe) {
     if (t.luogo && !t.coord) {
-      const r = await cercaLuoghi(t.luogo, 1);
+      // assoluto=true: ogni luogo cercato in modo indipendente, niente cascata di errori
+      const r = await cercaLuoghi(t.luogo, 1, true);
       if (r && r[0]) { t.coord = r[0].center; cambiato = true; }
     }
   }
