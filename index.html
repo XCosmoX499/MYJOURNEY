@@ -762,11 +762,13 @@ PERSONE | <numero>
 GIORNO <n> | <titolo> | <tipo> | <ora> | <luogo>
   Esempi:
   GIORNO 1 | Visita alla Torre | attivita | 10:00 | Torre di Pisa, Pisa, Italia
-  GIORNO 1 | Pranzo tipico | ristorante | 13:00 | —
-  (nel secondo, il ristorante è generico: campo luogo lasciato a trattino, niente punto sulla mappa)
+  GIORNO 1 | Cena in un ristorante vista mare | ristorante | 20:00 | —
+  (nel secondo, "ristorante vista mare" è una descrizione generica: campo luogo a trattino —, niente punto sulla mappa. La descrizione sta nel titolo.)
 - tipo = una parola tra: attivita / ristorante / hotel / volo / treno (se incerto: attivita)
 - ora = formato OO:MM, oppure — se non rilevante
-- luogo: QUESTA È UNA REGOLA IMPORTANTE. Indica il luogo SOLO se è un posto reale e identificabile sulla mappa (un monumento, un museo, una spiaggia con un nome, un indirizzo preciso): scrivi nome del posto + città + nazione (es. "Torre di Pisa, Pisa, Italia"). Se invece il posto è generico o vago ("un ristorante in centro", "una trattoria tipica", "il mercato locale", "dove fare colazione"), NON inventare un luogo: lascia il campo con un trattino —. Nel dubbio, meglio il trattino che un luogo impreciso. La mappa deve contenere solo posti veri e certi. NON mettere mai coordinate: le trova la app dal nome.
+- luogo: QUESTA È UNA REGOLA MOLTO IMPORTANTE, leggila con attenzione. Il campo luogo va compilato SOLO con il NOME PROPRIO di un posto realmente esistente e cercabile su una mappa: un monumento ("Torre di Pisa"), un museo ("Museo del Louvre"), una spiaggia con nome proprio ("Spiaggia di Elafonissi"), un locale con il suo nome vero ("Ristorante Da Mario"), un indirizzo. In quel caso scrivi: nome proprio + città + nazione (es. "Torre di Pisa, Pisa, Italia").
+  ATTENZIONE alle DESCRIZIONI GENERICHE: frasi come "ristorante vista mare", "una trattoria tipica", "un bar sulla spiaggia", "ristorante in centro", "dove fare colazione" NON sono nomi propri: sono descrizioni di un tipo di posto, e una mappa NON può trovarle (rischia di piazzarle nella città sbagliata). In questi casi lascia SEMPRE il campo luogo con un trattino —. Puoi mettere la descrizione nel TITOLO della tappa (es. "Cena in un ristorante vista mare"), ma il campo luogo resta —.
+  Regola pratica: se il nome che scriveresti potrebbe esistere identico in tante città diverse, allora è generico → trattino —. Solo un nome che identifica UN posto preciso al mondo va geolocalizzato. Nel dubbio, sempre il trattino. NON mettere mai coordinate: le trova la app dal nome.
 
 ### IMPERDIBILI ###
 (solo i bonus accettati dal viaggiatore, una riga ciascuno)
@@ -2304,6 +2306,28 @@ function creaViaggioDaPacchetto(p) {
 }
 
 // il geocoding in sottofondo: per ogni tappa importata cerca le coordinate vere
+// Controlla che il risultato del geocoding sia DAVVERO il posto cercato.
+// Mapbox risponde sempre qualcosa, anche per nomi generici: se cerco un posto
+// "a Paleochora" e mi torna "Milano", quel risultato va scartato (niente puntino
+// sbagliato a 2000 km). Confronto la città indicata nella query con ciò che Mapbox
+// ha trovato, e uso anche il punteggio di pertinenza (relevance).
+function risultatoAffidabile(query, feature) {
+  if (!feature) return false;
+  // relevance basso = match debole/incerto: lo scarto
+  if (typeof feature.relevance === "number" && feature.relevance < 0.5) return false;
+  const norm = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  // l'ultima parte della query (dopo l'ultima virgola) è di solito la città/nazione
+  const pezzi = query.split(",").map((x) => x.trim()).filter(Boolean);
+  const cittaCercata = norm(pezzi.length >= 2 ? pezzi[pezzi.length - 1] : pezzi[0]);
+  const trovato = norm(feature.place_name);
+  if (!cittaCercata) return true; // niente città nella query: mi fido del relevance
+  // se la query ha un riferimento geografico, deve comparire nel risultato di Mapbox
+  // (controllo anche le parti intermedie, es. città prima della nazione)
+  const riferimenti = pezzi.slice(1).map(norm).filter((x) => x.length >= 3);
+  if (!riferimenti.length) return true;
+  return riferimenti.some((rif) => trovato.includes(rif));
+}
+
 async function geocodificaViaggio(v) {
   if (!tokenValido()) return;
   let cambiato = false;
@@ -2311,7 +2335,10 @@ async function geocodificaViaggio(v) {
     if (t.luogo && !t.coord) {
       // assoluto=true: ogni luogo cercato in modo indipendente, niente cascata di errori
       const r = await cercaLuoghi(t.luogo, 1, true);
-      if (r && r[0]) { t.coord = r[0].center; cambiato = true; }
+      // metto il punto SOLO se il risultato è davvero coerente con il luogo cercato
+      if (r && r[0] && risultatoAffidabile(t.luogo, r[0])) {
+        t.coord = r[0].center; cambiato = true;
+      }
     }
   }
   if (cambiato) { salva(); if (corrente && corrente.id === v.id) renderMappa(); }
