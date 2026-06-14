@@ -287,6 +287,31 @@
   .azioni .pericolo { color: #C9514C; border-color: #f0d4d2; }
   .nascosto { display: none !important; }
 
+  /* Selettore posizione su mappa (puntina) */
+  #selettoreMappa { position: fixed; inset: 0; z-index: 300; background: #0a1228; display: none; }
+  #selettoreMappa.aperto { display: block; }
+  #selMappaCanvas { position: absolute; inset: 0; }
+  /* la puntina sta FERMA al centro: sposti la mappa sotto di lei */
+  #selPuntina { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%);
+    font-size: 40px; z-index: 6; pointer-events: none; filter: drop-shadow(0 3px 5px rgba(0,0,0,.5));
+    transition: transform .12s ease; }
+  #selettoreMappa.trascina #selPuntina { transform: translate(-50%, -115%); } /* piccolo "salto" mentre muovi */
+  #selBarra { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px;
+    z-index: 7; display: flex; gap: 8px; align-items: center; }
+  #selBarra input { flex: 1; border: none; border-radius: 12px; padding: 13px; font-size: 14px;
+    background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.3); -webkit-appearance: none; }
+  #selChiudi { width: 46px; height: 46px; border-radius: 50%; border: none; background: #fff;
+    font-size: 20px; flex: none; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+  #selNome { position: absolute; left: 12px; right: 12px; bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    z-index: 7; background: rgba(28,25,23,.92); color: #fff; border-radius: 12px; padding: 11px 14px;
+    font-size: 14px; text-align: center; min-height: 20px; backdrop-filter: blur(4px); }
+  #selConferma { position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%); z-index: 7; background: #E4572E; color: #fff; border: none;
+    border-radius: 999px; padding: 15px 40px; font-size: 16px; font-weight: 700;
+    box-shadow: 0 6px 20px rgba(228,87,46,.45); }
+  .btn-scegli-mappa { width: 100%; margin: -4px 0 10px; background: #fff; color: #4264FB;
+    border: 1.5px solid #4264FB; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 600; }
+
   /* Suggerimenti luogo */
   .campo-luogo { position: relative; }
   .lista-sugg { position: absolute; top: 100%; left: 0; right: 0; margin-top: -8px; z-index: 10;
@@ -483,6 +508,18 @@
 
 <button class="fab" id="fab">+ Nuovo viaggio</button>
 
+<!-- ===== SELETTORE POSIZIONE SU MAPPA (puntina) ===== -->
+<div id="selettoreMappa">
+  <div id="selMappaCanvas"></div>
+  <div id="selPuntina">📌</div>
+  <div id="selBarra">
+    <button id="selChiudi" title="Annulla">✕</button>
+    <input id="selCerca" placeholder="Cerca un indirizzo o un luogo..." autocomplete="off" />
+  </div>
+  <div id="selNome">Sposta la mappa per posizionare la puntina</div>
+  <button id="selConferma">📌 Conferma posizione</button>
+</div>
+
 <!-- ===== MODALE IMPORTA DA AI ===== -->
 <div class="velo" id="veloImporta">
   <div class="modale">
@@ -543,6 +580,7 @@
         <div class="lista-sugg nascosto" id="tSuggerimenti"></div>
       </div>
       <div class="luogo-ok nascosto" id="tLuogoOk">✓ Posizione trovata sulla mappa</div>
+      <button type="button" class="btn-scegli-mappa" id="tScegliMappa">📌 Scegli la posizione sulla mappa</button>
     </div>
 
     <!-- Campi per trasporti (volo/treno): DA → A con orari -->
@@ -1608,6 +1646,7 @@ function attivaSuggerimenti(inputId, boxId, okId, assegna) {
   });
 }
 attivaSuggerimenti("tLuogo", "tSuggerimenti", "tLuogoOk", (c) => coordScelta = c);
+$("tScegliMappa").addEventListener("click", () => apriSelettoreMappa("principale"));
 attivaSuggerimenti("tDa", "tDaSugg", "tDaOk", (c) => coordDaScelta = c);
 attivaSuggerimenti("tA", "tASugg", "tAOk", (c) => coordAScelta = c);
 
@@ -1810,6 +1849,115 @@ $("tSalva").addEventListener("click", async () => {
     const r = await cercaLuoghi(tappa.luogo, 1); if (r[0]) { tappa.coord = r[0].center; cambiato = true; }
   }
   if (cambiato) { salva(); renderMappa(); }
+});
+
+// ============ SELETTORE POSIZIONE SU MAPPA (puntina) ============
+// Apre una mappa a tutto schermo: l'utente sposta la mappa sotto una puntina fissa
+// al centro, conferma, e l'app ricava il nome del luogo da quelle coordinate
+// (geocoding inverso). Serve sia a correggere un luogo sbagliato dall'AI, sia ad
+// aggiungere posti a mano (es. un ristorante senza indirizzo preciso).
+let selMappa = null, selCoord = null, selDestinazione = null, selTimerNome = null;
+
+// geocoding inverso: da coordinate -> nome leggibile del posto
+async function nomeDaCoord(lng, lat) {
+  if (!tokenValido()) return "";
+  try {
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+    const j = await r.json();
+    if (j.features && j.features[0]) return j.features[0].place_name || "";
+  } catch {}
+  return "";
+}
+
+// apre il selettore. "destinazione" dice quale campo riempire al ritorno:
+// "principale" (campo luogo attività), in futuro estendibile a da/a dei trasporti.
+function apriSelettoreMappa(destinazione) {
+  if (!tokenValido() || !mapboxDisponibile()) {
+    toast("La mappa non è disponibile in questo momento.");
+    return;
+  }
+  selDestinazione = destinazione || "principale";
+  $("selettoreMappa").classList.add("aperto");
+  // punto di partenza: se la tappa ha già coordinate, parto da lì; altrimenti dal
+  // primo nodo del viaggio; altrimenti vista ampia.
+  let centro = [12.5, 41.9], zoom = 4;
+  if (selDestinazione === "principale" && coordScelta) { centro = coordScelta; zoom = 14; }
+  else if (corrente) {
+    const nodi = nodiRotta();
+    if (nodi.length) { centro = nodi[0].coord; zoom = 11; }
+  }
+  // creo (o riuso) la mappa del selettore
+  setTimeout(() => {
+    if (!selMappa) {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      selMappa = new mapboxgl.Map({
+        container: "selMappaCanvas",
+        style: "mapbox://styles/mapbox/standard",
+        center: centro, zoom: zoom,
+      });
+      // mentre muovo la mappa, la puntina "salta" un po' e azzero il nome
+      selMappa.on("movestart", () => {
+        $("selettoreMappa").classList.add("trascina");
+        if (selTimerNome) clearTimeout(selTimerNome);
+      });
+      // a fine spostamento: leggo il centro = posizione della puntina, e ricavo il nome
+      selMappa.on("moveend", () => {
+        $("selettoreMappa").classList.remove("trascina");
+        const c = selMappa.getCenter();
+        selCoord = [c.lng, c.lat];
+        $("selNome").textContent = "Cerco il nome del luogo…";
+        if (selTimerNome) clearTimeout(selTimerNome);
+        selTimerNome = setTimeout(async () => {
+          const nome = await nomeDaCoord(selCoord[0], selCoord[1]);
+          $("selNome").textContent = nome || "Posizione senza nome (la confermi comunque)";
+        }, 500);
+      });
+    } else {
+      selMappa.setCenter(centro); selMappa.setZoom(zoom);
+      setTimeout(() => { try { selMappa.resize(); } catch {} }, 60);
+    }
+    // posizione iniziale della puntina = centro mappa
+    selCoord = centro;
+    setTimeout(() => { try { selMappa.resize(); } catch {} }, 100);
+  }, 50);
+}
+
+// ricerca nella barra del selettore: trovo un posto e ci sposto la mappa
+let selCercaTimer = null;
+$("selCerca").addEventListener("input", () => {
+  clearTimeout(selCercaTimer);
+  const testo = $("selCerca").value.trim();
+  if (testo.length < 3) return;
+  selCercaTimer = setTimeout(async () => {
+    const r = await cercaLuoghi(testo, 1, true); // ricerca assoluta
+    if (r && r[0] && selMappa) {
+      selMappa.flyTo({ center: r[0].center, zoom: 14, duration: 1200 });
+    }
+  }, 500);
+});
+
+$("selChiudi").addEventListener("click", () => {
+  $("selettoreMappa").classList.remove("aperto");
+  $("selCerca").value = "";
+});
+
+$("selConferma").addEventListener("click", async () => {
+  if (!selCoord) { toast("Sposta la mappa per scegliere un punto."); return; }
+  // ricavo il nome (se non già pronto) e riempio il campo giusto
+  let nome = $("selNome").textContent;
+  if (!nome || nome.includes("Cerco") || nome.includes("Sposta")) {
+    nome = await nomeDaCoord(selCoord[0], selCoord[1]);
+  }
+  if (nome && nome.includes("senza nome")) nome = "";
+  if (selDestinazione === "principale") {
+    coordScelta = selCoord.slice();
+    if (nome) $("tLuogo").value = nome;
+    $("tLuogoOk").classList.remove("nascosto");
+    $("tLuogoOk").textContent = "✓ Posizione scelta sulla mappa";
+  }
+  $("selettoreMappa").classList.remove("aperto");
+  $("selCerca").value = "";
+  toast("Posizione impostata 📌");
 });
 
 // ============ FOTO ============
