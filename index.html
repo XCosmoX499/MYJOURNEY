@@ -151,6 +151,7 @@
   .tappa .luogo { font-size: 13px; color: #78716c; }
   .tappa .costo { width: 86px; display: flex; align-items: center; justify-content: center; }
   .tappa .costo b { font-family: ui-monospace, monospace; font-size: 14px; }
+  .tappa.senza-costo .corpo { border-right: none; } /* attività gratuite: niente costo né linea tratteggiata */
   .vuoto { font-size: 13px; color: #a8a29e; font-style: italic; }
   .suggerimento { font-size: 12px; color: #a8a29e; text-align: center; margin: -4px 0 14px; }
 
@@ -252,7 +253,9 @@
     background: #fff; font-size: 19px; cursor: pointer;
     box-shadow: 0 4px 14px rgba(0,0,0,.28);
   }
-  #barraLuce, #barra3d { display: flex; flex-direction: column; gap: 8px; }
+  #barraLuce, #barra3d { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  #luceOpzioni { display: none; flex-direction: column; gap: 8px; }
+  #barraLuce.aperto #luceOpzioni { display: flex; }
   #barraLuce button.scelto { background: #FFE9A8; box-shadow: 0 4px 14px rgba(0,0,0,.28), inset 0 0 0 2px #C9A227; }
   #colonnaMappa .sep { width: 26px; height: 2px; border-radius: 2px; background: #ffffff66; }
   #contenitoreMappa { position: absolute; inset: 0; }
@@ -286,15 +289,23 @@
     flex: none; font-family: ui-monospace, monospace; font-size: 13px;
     font-weight: 700; color: #FFC56B;
   }
-  /* la barra è divisa in segmenti: uno per ogni tratta, largo quanto la sua durata */
-  #bvPista { display: flex; gap: 3px; height: 8px; }
-  .bv-seg { flex: 1 1 0; min-width: 5px; position: relative; overflow: hidden;
-    background: rgba(255,255,255,.16); border-radius: 999px; transition: box-shadow .2s ease; }
-  .bv-seg.attiva { box-shadow: 0 0 0 1.5px rgba(255,197,107,.95); }
-  .bv-seg.attiva.in-pausa { animation: bvLampeggia 1.1s ease-in-out infinite; }
-  @keyframes bvLampeggia { 50% { box-shadow: 0 0 0 1.5px rgba(255,197,107,.3); } }
-  .bv-seg-pieno { position: absolute; inset: 0; width: 0%; border-radius: 999px;
+  /* la barra è una linea con una "fermata" per ogni tappa, che si accende al passaggio */
+  #bvPista { position: relative; height: 16px; }
+  #bvPista::before { content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 3px; transform: translateY(-50%); border-radius: 999px; background: rgba(255,255,255,.18); }
+  #bvLinea { position: absolute; left: 0; top: 50%; height: 3px; width: 0%;
+    transform: translateY(-50%); border-radius: 999px;
     background: linear-gradient(90deg, #E4572E, #FFB02E); transition: width .12s linear; }
+  .bv-fermata { position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
+    transform: translate(-50%, -50%); z-index: 2; background: #46557a;
+    box-shadow: 0 0 0 2px rgba(10,18,40,.92); transition: background .2s ease; }
+  .bv-fermata.raggiunta { background: #FFC56B; }
+  #bvTesta { position: absolute; top: 50%; left: 0; width: 12px; height: 12px; border-radius: 50%;
+    transform: translate(-50%, -50%); z-index: 3; background: #fff;
+    box-shadow: 0 0 0 3px rgba(228,87,46,.95), 0 0 10px 2px rgba(255,176,46,.6);
+    transition: left .12s linear; }
+  #bvTesta.in-pausa { animation: bvLampeggia 1.1s ease-in-out infinite; }
+  @keyframes bvLampeggia { 50% { box-shadow: 0 0 0 3px rgba(228,87,46,.35), 0 0 10px 2px rgba(255,176,46,.25); } }
   /* mentre la barra è visibile sollevo il pulsante così non si sovrappongono */
   #vistaMappa.con-barra .btn-viaggio { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
   /* Cursore veicolo stile Google Maps */
@@ -482,10 +493,13 @@
     <button id="btnCasa" title="Torna al viaggio">🏠</button>
     <div id="colonnaMappa">
       <div id="barraLuce">
-        <button data-luce="dawn" title="Alba">🌅</button>
-        <button data-luce="day" title="Giorno">☀️</button>
-        <button data-luce="dusk" title="Tramonto">🌇</button>
-        <button data-luce="night" title="Notte">🌙</button>
+        <button id="btnLuce" title="Luce">☀️</button>
+        <div id="luceOpzioni">
+          <button data-luce="dawn" title="Alba">🌅</button>
+          <button data-luce="day" title="Giorno">☀️</button>
+          <button data-luce="dusk" title="Tramonto">🌇</button>
+          <button data-luce="night" title="Notte">🌙</button>
+        </div>
       </div>
       <div class="sep"></div>
       <div id="barra3d">
@@ -1175,7 +1189,7 @@ function renderItinerario() {
         }
         const tp = TIPI[t.tipo];
         const orario = isTrasporto(t.tipo) && t.oraArrivo ? `${t.ora} → ${t.oraArrivo}` : t.ora;
-        const div = document.createElement("div"); div.className = "tappa";
+        const div = document.createElement("div"); div.className = "tappa" + (t.costo ? "" : " senza-costo");
         div.innerHTML = `
           <div class="barra" style="background:${tp.colore}"></div>
           <div class="corpo">
@@ -1183,7 +1197,7 @@ function renderItinerario() {
             <div class="titolo">${t.titolo}</div>
             <div class="luogo">${t.luogo ? "📍 " + t.luogo : ""}</div>
           </div>
-          <div class="costo"><b style="color:${t.costo === 0 ? "#2A9D8F" : "#1c1917"}">${eur(t.costo)}</b></div>`;
+          ${t.costo ? `<div class="costo"><b>${eur(t.costo)}</b></div>` : ""}`;
         div.addEventListener("click", () => apriModaleTappa({ giorno: g, tappa: t }));
         corpo.appendChild(div);
       }
@@ -1475,6 +1489,12 @@ function lucePerOra() {
   return "night";
 }
 
+// icona unica delle luci: mostra l'emoji della luce attualmente attiva
+const EMOJI_LUCE = { dawn: "🌅", day: "☀️", dusk: "🌇", night: "🌙" };
+function aggiornaIconaLuce(preset) {
+  const b = $("btnLuce");
+  if (b) b.textContent = EMOJI_LUCE[preset] || "☀️";
+}
 // La luce della mappa segue l'orologio: ogni minuto controllo se è cambiata la fascia
 let luceCorrente = lucePerOra();
 setInterval(() => {
@@ -1483,7 +1503,8 @@ setInterval(() => {
   if (l === luceCorrente) return;
   luceCorrente = l;
   try { mappa.setConfigProperty("basemap", "lightPreset", l); } catch {}
-  document.querySelectorAll("#barraLuce button").forEach((b) => b.classList.toggle("scelto", b.dataset.luce === l));
+  document.querySelectorAll("#luceOpzioni button").forEach((b) => b.classList.toggle("scelto", b.dataset.luce === l));
+  aggiornaIconaLuce(l);
 }, 60000);
 
 // ===== Tour 3D: gli edifici 3D di Mapbox Standard compaiono solo a zoom alto (15+) =====
@@ -1553,15 +1574,23 @@ function renderMappa() {
       pitch: 45, // inclinazione per apprezzare il 3D
     });
     mappa.on("load", () => { mappaPronta = true; aggiornaRotte(); });
-    // Selettore luce: 🌅 alba · ☀️ giorno · 🌇 tramonto · 🌙 notte
-    document.querySelectorAll("#barraLuce button").forEach((b) => {
+    // Selettore luce: una sola icona che al tocco apre le altre (🌅 alba · ☀️ giorno · 🌇 tramonto · 🌙 notte)
+    $("btnLuce").addEventListener("click", (e) => {
+      e.stopPropagation();
+      $("barraLuce").classList.toggle("aperto");
+    });
+    document.querySelectorAll("#luceOpzioni button").forEach((b) => {
       b.addEventListener("click", () => {
         luceCorrente = b.dataset.luce;
         try { mappa.setConfigProperty("basemap", "lightPreset", b.dataset.luce); } catch {}
-        document.querySelectorAll("#barraLuce button").forEach((x) => x.classList.toggle("scelto", x === b));
+        aggiornaIconaLuce(b.dataset.luce);
+        document.querySelectorAll("#luceOpzioni button").forEach((x) => x.classList.toggle("scelto", x === b));
+        $("barraLuce").classList.remove("aperto"); // scelta fatta: richiudo il menu
       });
       b.classList.toggle("scelto", b.dataset.luce === lucePerOra());
     });
+    aggiornaIconaLuce(lucePerOra());                                  // l'icona parte sulla luce attuale
+    $("contenitoreMappa").addEventListener("click", () => $("barraLuce").classList.remove("aperto")); // tocco sulla mappa: chiude il menu
   }
   marcatori.forEach((m) => m.remove()); marcatori = [];
   const punti = [];
@@ -1621,56 +1650,56 @@ function animaSegmento(a, b, tipo, durata, onProgress) {
     })(performance.now());
   });
 }
-// ===== Barra di avanzamento della riproduzione (segmentata, con pausa) =====
+// ===== Barra di avanzamento: linea con una "fermata" per ogni tappa =====
 const EMOJI_MEZZO = { volo: "✈️", treno: "🚄", auto: "🚗" };
 let viaggioInPausa = false, riproduzioneFinita = false;
-let bvSegPieni = [];                 // i riempimenti dei singoli segmenti, uno per tratta
-let bvIndiceCorrente = 0, bvTCorrente = 0; // tratta in corso e suo avanzamento (per ridipingere in pausa)
+let bvFermate = [];        // i pallini-fermata, uno per ogni nodo del tragitto
+let bvFrazCorrente = 0;    // avanzamento globale attuale (0→1), per ridipingere in pausa
 
 // mostra/nasconde la barra e solleva il pulsante "Riproduci" così non si sovrappongono
 function mostraBarraViaggio(visibile) {
   $("vistaMappa").classList.toggle("con-barra", visibile);
   $("barraViaggio").classList.toggle("nascosto", !visibile);
 }
-// costruisce una barra divisa in segmenti: uno per tratta, largo quanto la sua durata
-function costruisciSegmenti(durate) {
+// costruisce la linea: una fermata per ogni tappa, posizionata in base alla durata cumulata
+function costruisciFermate(nodi, durate) {
   const pista = $("bvPista");
   pista.innerHTML = "";
-  bvSegPieni = [];
-  for (const d of durate) {
-    const seg = document.createElement("div");
-    seg.className = "bv-seg";
-    seg.style.flex = (d || 1) + " 1 0";   // larghezza proporzionale alla durata della tratta
-    const pieno = document.createElement("div");
-    pieno.className = "bv-seg-pieno";
-    seg.appendChild(pieno);
-    pista.appendChild(seg);
-    bvSegPieni.push(pieno);
+  bvFermate = [];
+  const totale = durate.reduce((s, d) => s + d, 0) || 1;
+  const linea = document.createElement("div"); linea.id = "bvLinea"; pista.appendChild(linea);
+  let acc = 0;
+  for (let i = 0; i < nodi.length; i++) {
+    const pos = (acc / totale) * 100;            // 0% alla partenza, 100% all'arrivo
+    const f = document.createElement("div");
+    f.className = "bv-fermata";
+    f.style.left = pos + "%";
+    f.dataset.pos = pos;
+    f.title = nodi[i].nome || "";
+    pista.appendChild(f);
+    bvFermate.push(f);
+    if (i < durate.length) acc += durate[i];
   }
+  const testa = document.createElement("div"); testa.id = "bvTesta"; pista.appendChild(testa);
 }
-// dipinge i segmenti: completi al 100%, quello in corso a "t", i futuri vuoti
-function dipingiSegmenti(indice, t) {
-  bvSegPieni.forEach((pieno, i) => {
-    const seg = pieno.parentElement;
-    let w = 0;
-    if (i < indice) w = 100;
-    else if (i === indice) w = Math.max(0, Math.min(1, t)) * 100;
-    pieno.style.width = w + "%";
-    seg.classList.toggle("attiva", i === indice);
-    seg.classList.toggle("in-pausa", i === indice && viaggioInPausa);
-  });
-}
-// aggiorna percentuale globale ed etichetta "dove siamo"
+// aggiorna linea, puntino-tu, fermate accese, percentuale ed etichetta
 function aggiornaBarraViaggio(frazione, dove) {
-  $("bvPerc").textContent = Math.max(0, Math.min(100, Math.round(frazione * 100))) + "%";
+  bvFrazCorrente = frazione;
+  const perc = Math.max(0, Math.min(100, frazione * 100));
+  $("bvPerc").textContent = Math.round(perc) + "%";
   if (dove != null) $("bvDove").innerHTML = dove;
+  const linea = document.getElementById("bvLinea");
+  const testa = document.getElementById("bvTesta");
+  if (linea) linea.style.width = perc + "%";
+  if (testa) { testa.style.left = perc + "%"; testa.classList.toggle("in-pausa", viaggioInPausa); }
+  bvFermate.forEach((f) => f.classList.toggle("raggiunta", perc >= parseFloat(f.dataset.pos) - 0.5));
 }
 // aggiorna il pulsante in base allo stato: riproduci / pausa / riprendi / rivedi
 function aggiornaPulsanteViaggio() {
   const btn = $("btnViaggio");
   if (!animazioneInCorso) btn.textContent = riproduzioneFinita ? "↺ Rivedi viaggio" : "▶ Riproduci viaggio";
   else btn.textContent = viaggioInPausa ? "▶ Riprendi" : "⏸ Pausa";
-  if (animazioneInCorso) dipingiSegmenti(bvIndiceCorrente, bvTCorrente); // accende/spegne il lampeggio della pausa
+  if (animazioneInCorso) aggiornaBarraViaggio(bvFrazCorrente, null); // riapplica il lampeggio della pausa sul puntino
 }
 // attesa che rispetta la pausa (per le pause tra una tratta e l'altra)
 function attesaPausabile(ms) {
@@ -1702,8 +1731,8 @@ async function avviaRiproduzione() {
   riproduzioneFinita = false;
   aggiornaPulsanteViaggio();
 
-  // ogni tratta "pesa" quanto la sua animazione: la barra va di pari passo col mezzo
-  // e le tratte lunghe occupano più barra di quelle corte
+  // ogni tratta "pesa" quanto la sua animazione: fermate e puntino vanno di pari
+  // passo col mezzo (le tratte lunghe distano di più sulla linea)
   const durate = [];
   for (let i = 0; i < nodi.length - 1; i++) {
     const a = nodi[i].coord, b = nodi[i + 1].coord;
@@ -1714,9 +1743,7 @@ async function avviaRiproduzione() {
   let trascorso = 0;
 
   mostraBarraViaggio(true);
-  costruisciSegmenti(durate);
-  bvIndiceCorrente = 0; bvTCorrente = 0;
-  dipingiSegmenti(0, 0);
+  costruisciFermate(nodi, durate);
   aggiornaBarraViaggio(0, `📍 ${nodi[0].nome || "Partenza"}`);
 
   for (let i = 0; i < nodi.length - 1; i++) {
@@ -1724,28 +1751,20 @@ async function avviaRiproduzione() {
     const mezzo = nodi[i + 1].mezzo || "auto";
     const conta = `<span class="bv-num">${i + 1}/${nodi.length - 1}</span>`;
     const dove = `${conta}<span class="mezzo">${EMOJI_MEZZO[mezzo] || "🚗"}</span>${nodi[i].nome || ""} → ${nodi[i + 1].nome || ""}`;
-    bvIndiceCorrente = i; bvTCorrente = 0;
 
     mappa.fitBounds(new mapboxgl.LngLatBounds(a, a).extend(b), { padding: 90, maxZoom: 12, duration: 1100 });
     aggiornaBarraViaggio(trascorso / totale, dove); // mostro la tratta in arrivo mentre la camera si sposta
-    dipingiSegmenti(i, 0);
     await attesaPausabile(1200);
 
     const durata = durate[i];
     await animaSegmento(a, b, mezzo, durata, (t) => {
-      bvTCorrente = t;
       aggiornaBarraViaggio((trascorso + t * durata) / totale, dove);
-      dipingiSegmenti(i, t);
     });
     trascorso += durata;
-    bvTCorrente = 1;
-    dipingiSegmenti(i, 1);
     aggiornaBarraViaggio(trascorso / totale, dove);
     await attesaPausabile(350);
   }
 
-  bvIndiceCorrente = durate.length; // tutte le tratte completate
-  dipingiSegmenti(durate.length, 0);
   aggiornaBarraViaggio(1, "🏁 Arrivo");
   const punti = nodi.map((x) => x.coord);
   const bounds = punti.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(punti[0], punti[0]));
