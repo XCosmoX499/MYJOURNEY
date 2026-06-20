@@ -135,6 +135,15 @@
   .tabs { display: flex; gap: 6px; padding: 14px 16px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .tab { flex: 0 0 auto; padding: 9px 14px; border-radius: 999px; border: 1px solid #e7e5e4; background: #fff; color: #57534e; font-size: 14px; font-weight: 600; }
   .tab.attiva { background: #1c1917; color: #fff; border-color: #1c1917; }
+  #macroTabs { overflow-x: visible; }
+  #macroTabs .tab { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; padding: 9px 4px; font-size: 11px; line-height: 1.1;
+    border-radius: 14px; white-space: nowrap; }
+  #macroTabs .tab .mt-ic { font-size: 20px; line-height: 1; }
+  .sottobar { display: flex; gap: 6px; padding: 12px 16px 0; }
+  .sottobar button { flex: 1; padding: 9px; border-radius: 10px; border: none; background: #ececeb;
+    color: #57534e; font-size: 13px; font-weight: 700; }
+  .sottobar button.attiva { background: #1c1917; color: #fff; }
 
   main { padding: 18px 16px; }
   .giorno { margin-bottom: 24px; }
@@ -472,14 +481,13 @@
     <div class="date" id="dateViaggio"></div>
     <div class="countdown" id="countdown"></div>
   </header>
-  <div class="tabs">
-    <button class="tab attiva" data-vista="itinerario">🗓️ Itinerario</button>
-    <button class="tab" data-vista="dafare">✨ Imperdibili</button>
-    <button class="tab" data-vista="budget">💰 Budget</button>
-    <button class="tab" data-vista="foto">📷 Foto</button>
-    <button class="tab" data-vista="biglietti">🎫 Biglietti</button>
-    <button class="tab" data-vista="valigia">🎒 Valigia</button>
+  <div class="tabs" id="macroTabs">
+    <button class="tab attiva" data-macro="viaggio"><span class="mt-ic">🗓️</span>Viaggio</button>
+    <button class="tab" data-macro="budget"><span class="mt-ic">💰</span>Budget</button>
+    <button class="tab" data-macro="preparativi"><span class="mt-ic">🎒</span>Preparativi</button>
+    <button class="tab" data-macro="ricordi"><span class="mt-ic">📷</span>Ricordi</button>
   </div>
+  <div class="sottobar nascosto" id="sottoBar"></div>
   <main id="vistaItinerario"></main>
   <main id="vistaBudget" class="nascosto"></main>
   <main id="vistaMappa" class="nascosto">
@@ -1097,7 +1105,8 @@ function apriViaggio(id) {
   $("schermataHome").classList.add("nascosto");
   $("schermataViaggio").classList.remove("nascosto");
   $("fab").textContent = "+ Aggiungi tappa";
-  mostraVista("itinerario");
+  macroSub.viaggio = "itinerario"; macroSub.preparativi = "valigia"; // ogni apertura riparte da Itinerario
+  mostraMacro("viaggio");
   renderViaggio();
   if ((corrente.persone || 1) > 1 && !corrente.nomi) apriModaleViaggio(true); // prima volta: chiedo i nomi
 }
@@ -2752,22 +2761,56 @@ $("importaCrea").addEventListener("click", async () => {
 
 // ============ NAVIGAZIONE ============
 let vistaAttuale = "itinerario";
-$("btnGlobo").addEventListener("click", () => mostraVista(vistaAttuale === "mappa" ? "itinerario" : "mappa"));
-$("btnCasa").addEventListener("click", () => mostraVista("itinerario"));
+$("btnGlobo").addEventListener("click", () => mostraVista(vistaAttuale === "mappa" ? vistaDiMacro(macroAttiva) : "mappa"));
+$("btnCasa").addEventListener("click", () => mostraVista(vistaDiMacro(macroAttiva)));
 function mostraVista(nome) {
   vistaAttuale = nome;
   if (!animazioneInCorso) mostraBarraViaggio(false); // nasconde la barra cambiando scheda (non disturba una riproduzione in corso)
   $("btnGlobo").classList.toggle("attivo", nome === "mappa");
   if (nome === "mappa") setTimeout(() => { if (mappa) try { mappa.resize(); } catch {} }, 80); // il contenitore è cambiato: avviso Mapbox
-  document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("attiva", x.dataset.vista === nome));
   for (const v of ["itinerario", "budget", "mappa", "foto", "biglietti", "valigia", "dafare"]) {
     $("vista" + v[0].toUpperCase() + v.slice(1)).classList.toggle("nascosto", v !== nome);
   }
   $("fab").classList.toggle("nascosto", nome !== "itinerario");
   if (nome === "mappa" && mappa) setTimeout(() => mappa.resize(), 50);
 }
-document.querySelectorAll(".tab").forEach((b) =>
-  b.addEventListener("click", () => mostraVista(b.dataset.vista)));
+// ===== Barra strumenti a macro-categorie =====
+// Itinerario+Imperdibili → "Viaggio"; Valigia+Biglietti → "Preparativi"; Budget e Ricordi sono singoli.
+const MACRO = {
+  viaggio:     { viste: [["itinerario", "🗓️ Itinerario"], ["dafare", "✨ Imperdibili"]] },
+  budget:      { viste: [["budget", "💰 Budget"]] },
+  preparativi: { viste: [["valigia", "🎒 Valigia"], ["biglietti", "🎫 Biglietti"]] },
+  ricordi:     { viste: [["foto", "📷 Foto"]] },
+};
+let macroAttiva = "viaggio";
+const macroSub = { viaggio: "itinerario", preparativi: "valigia" }; // sotto-vista corrente dei macro doppi
+function vistaDiMacro(macro) {
+  const m = MACRO[macro];
+  return m.viste.length === 1 ? m.viste[0][0] : (macroSub[macro] || m.viste[0][0]);
+}
+function renderSottoBar(macro) {
+  const bar = $("sottoBar");
+  const m = MACRO[macro];
+  if (!m || m.viste.length < 2) { bar.classList.add("nascosto"); bar.innerHTML = ""; return; }
+  const attuale = vistaDiMacro(macro);
+  bar.innerHTML = "";
+  for (const [vista, etichetta] of m.viste) {
+    const b = document.createElement("button");
+    b.textContent = etichetta;
+    b.classList.toggle("attiva", vista === attuale);
+    b.addEventListener("click", () => { macroSub[macro] = vista; mostraVista(vista); renderSottoBar(macro); });
+    bar.appendChild(b);
+  }
+  bar.classList.remove("nascosto");
+}
+function mostraMacro(macro) {
+  macroAttiva = macro;
+  document.querySelectorAll("#macroTabs .tab").forEach((t) => t.classList.toggle("attiva", t.dataset.macro === macro));
+  renderSottoBar(macro);
+  mostraVista(vistaDiMacro(macro));
+}
+document.querySelectorAll("#macroTabs .tab").forEach((t) =>
+  t.addEventListener("click", () => mostraMacro(t.dataset.macro)));
 $("indietro").addEventListener("click", () => { corrente = null; renderHome(); });
 $("modificaViaggio").addEventListener("click", () => apriModaleViaggio(true));
 $("fab").addEventListener("click", () => corrente ? apriModaleTappa(null) : apriModaleViaggio(false));
